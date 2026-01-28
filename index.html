@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CexPi - Used Vehicles Marketplace</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+    h1 { color: #6B4CE6; text-align: center; }
+    .card { background: white; padding: 25px; margin: 20px auto; max-width: 600px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    button { padding: 12px 24px; font-size: 16px; margin: 10px 0; cursor: pointer; border: none; border-radius: 8px; }
+    .btn-primary { background: #6B4CE6; color: white; width: 100%; }
+    .btn-primary:hover { background: #5a3fd6; }
+    .btn-delete { background: #f44336; color: white; padding: 8px 16px; margin-top: 10px; }
+    .btn-delete:hover { background: #d32f2f; }
+    .hidden { display: none; }
+    input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    #status { text-align: center; font-size: 18px; margin: 20px 0; }
+    .images-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .images-preview img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
+    #listings-section { margin-top: 40px; }
+    .listing-item { background: white; padding: 20px; margin: 15px 0; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .listing-item h3 { margin: 0 0 10px 0; color: #6B4CE6; }
+    .listing-item p { margin: 5px 0; color: #555; }
+    .listing-images { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .listing-images img { width: 150px; height: auto; border-radius: 8px; }
+    .search-container { margin: 20px 0; text-align: center; }
+    .search-input { padding: 12px; font-size: 16px; width: 80%; max-width: 400px; border-radius: 8px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🚗🚚CexPi🚴‍♂️</h1>
+    <p style="text-align:center;">Used Cars, Trucks & Motorcycles Ads Platform</p>
+    <p style="text-align:center;">Free access • Pay 0.5 Pi to publish one listing</p>
+
+    <div id="login-section">
+  
+  <label style="display:block; margin-bottom:15px; font-size:14px;">
+    <input type="checkbox" id="acceptPolicies">
+    I agree to the 
+    <a href="terms_of_service.html" target="_blank">Terms of Service</a> 
+    and 
+    <a href="privacy_policy.html" target="_blank">Privacy Policy</a>
+  </label>
+
+  <button id="login-btn" class="btn-primary">
+    Login with Pi Network
+  </button>
+
+</div>
+
+
+    <div id="app-section" class="hidden">
+      <div id="status"></div>
+      <button id="logout-btn" class="btn-delete" style="width:100%;">
+  Logout
+</button>
+
+      <button id="add-listing-btn" class="btn-primary">Add New Listing (Pay 0.5 Pi)</button>
+
+      <div id="listing-form" class="hidden">
+        <h2>Add Your Vehicle Listing</h2>
+        <form id="listingForm">
+          <label>Title *</label>
+          <input type="text" id="title" required>
+
+          <label>Description *</label>
+          <textarea id="description" rows="4" required></textarea>
+
+          <label>Price in Pi *</label>
+          <input type="number" id="priceInPi" min="0" step="0.01" required>
+
+          <label>Category *</label>
+          <select id="category" required>
+            <option value="">Select Category</option>
+            <option value="car">Car</option>
+            <option value="truck">Truck</option>
+            <option value="motorcycle">Motorcycle</option>
+          </select>
+
+          <label>Make (Brand)</label>
+          <input type="text" id="make">
+
+          <label>Model</label>
+          <input type="text" id="model">
+
+          <label>Year</label>
+          <input type="number" id="year" min="1900" max="2026">
+
+          <label>Mileage (km)</label>
+          <input type="number" id="mileage" min="0">
+
+          <label>Country *</label>
+          <select id="country" required>
+            <option value="">Select Country</option>
+            <option value="Afghanistan">Afghanistan</option>
+            <option value="Albania">Albania</option>
+            <option value="Algeria">Algeria</option>
+            <option value="Andorra">Andorra</option>
+            <option value="Angola">Angola</option>
+            <option value="Antigua and Barbuda">Antigua and Barbuda</option>
+            <option value="Argentina">Argentina</option>
+            <option value="Armenia">Armenia</option>
+            <option value="Australia">Australia</option>
+            <option value="Austria">Austria</option>
+            <option value="Azerbaijan">Azerbaijan</option>
+            <option value="Bahamas">Bahamas</option>
+            <option value="Bahrain">Bahrain</option>
+            <option value="Bangladesh">Bangladesh</option>
+            <option value="Barbados">Barbados</option>
+            <option value="Belarus">Belarus</option>
+            <option value="Belgium">Belgium</option>
+            <option value="Belize">Belize</option>
+            <option value="Benin">Benin</option>
+            <option value="Bhutan">Bhutan</option>
+            <option value="Bolivia">Bolivia</option>
+            <option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
+            <option value="Botswana">Botswana</option>
+            <option value="Brazil">Brazil</option>
+            <option value="Brunei">Brunei</option>
+            <option value="Bulgaria">Bulgaria</option>
+            <option value="Burkina Faso">Burkina Faso</option>
+            <option value="Burundi">Burundi</option>
+            <option value="Cabo Verde">Cabo Verde</option>
+            <option value="Cambodia">Cambodia</option>
+            <option value="Cameroon">Cameroon</option>
+            <option value="Canada">Canada</option>
+            <option value="Central African Republic">Central African Republic</option>
+            <option value="Chad">Chad</option>
+            <option value="Chile">Chile</option>
+            <option value="China">China</option>
+            <option value="Colombia">Colombia</option>
+            <option value="Comoros">Comoros</option>
+            <option value="Congo (Congo-Brazzaville)">Congo (Congo-Brazzaville)</option>
+            <option value="Costa Rica">Costa Rica</option>
+            <option value="Croatia">Croatia</option>
+            <option value="Cuba">Cuba</option>
+            <option value="Cyprus">Cyprus</option>
+            <option value="Czechia (Czech Republic)">Czechia (Czech Republic)</option>
+            <option value="Denmark">Denmark</option>
+            <option value="Djibouti">Djibouti</option>
+            <option value="Dominica">Dominica</option>
+            <option value="Dominican Republic">Dominican Republic</option>
+            <option value="Ecuador">Ecuador</option>
+            <option value="Egypt">Egypt</option>
+            <option value="El Salvador">El Salvador</option>
+            <option value="Equatorial Guinea">Equatorial Guinea</option>
+            <option value="Eritrea">Eritrea</option>
+            <option value="Estonia">Estonia</option>
+            <option value="Eswatini (Swaziland)">Eswatini (Swaziland)</option>
+            <option value="Ethiopia">Ethiopia</option>
+            <option value="Fiji">Fiji</option>
+            <option value="Finland">Finland</option>
+            <option value="France">France</option>
+            <option value="Gabon">Gabon</option>
+            <option value="Gambia">Gambia</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Germany">Germany</option>
+            <option value="Ghana">Ghana</option>
+            <option value="Greece">Greece</option>
+            <option value="Grenada">Grenada</option>
+            <option value="Guatemala">Guatemala</option>
+            <option value="Guinea">Guinea</option>
+            <option value="Guinea-Bissau">Guinea-Bissau</option>
+            <option value="Guyana">Guyana</option>
+            <option value="Haiti">Haiti</option>
+            <option value="Honduras">Honduras</option>
+            <option value="Hungary">Hungary</option>
+            <option value="Iceland">Iceland</option>
+            <option value="India">India</option>
+            <option value="Indonesia">Indonesia</option>
+            <option value="Iran">Iran</option>
+            <option value="Iraq">Iraq</option>
+            <option value="Ireland">Ireland</option>
+            <option value="Israel">Israel</option>
+            <option value="Italy">Italy</option>
+            <option value="Jamaica">Jamaica</option>
+            <option value="Japan">Japan</option>
+            <option value="Jordan">Jordan</option>
+            <option value="Kazakhstan">Kazakhstan</option>
+            <option value="Kenya">Kenya</option>
+            <option value="Kiribati">Kiribati</option>
+            <option value="Kosovo">Kosovo</option>
+            <option value="Kuwait">Kuwait</option>
+            <option value="Kyrgyzstan">Kyrgyzstan</option>
+            <option value="Laos">Laos</option>
+            <option value="Latvia">Latvia</option>
+            <option value="Lebanon">Lebanon</option>
+            <option value="Lesotho">Lesotho</option>
+            <option value="Liberia">Liberia</option>
+            <option value="Libya">Libya</option>
+            <option value="Liechtenstein">Liechtenstein</option>
+            <option value="Lithuania">Lithuania</option>
+            <option value="Luxembourg">Luxembourg</option>
+            <option value="Madagascar">Madagascar</option>
+            <option value="Malawi">Malawi</option>
+            <option value="Malaysia">Malaysia</option>
+            <option value="Maldives">Maldives</option>
+            <option value="Mali">Mali</option>
+            <option value="Malta">Malta</option>
+            <option value="Marshall Islands">Marshall Islands</option>
+            <option value="Mauritania">Mauritania</option>
+            <option value="Mauritius">Mauritius</option>
+            <option value="Mexico">Mexico</option>
+            <option value="Micronesia">Micronesia</option>
+            <option value="Moldova">Moldova</option>
+            <option value="Monaco">Monaco</option>
+            <option value="Mongolia">Mongolia</option>
+            <option value="Montenegro">Montenegro</option>
+            <option value="Morocco">Morocco</option>
+            <option value="Mozambique">Mozambique</option>
+            <option value="Myanmar (Burma)">Myanmar (Burma)</option>
+            <option value="Namibia">Namibia</option>
+            <option value="Nauru">Nauru</option>
+            <option value="Nepal">Nepal</option>
+            <option value="Netherlands">Netherlands</option>
+            <option value="New Zealand">New Zealand</option>
+            <option value="Nicaragua">Nicaragua</option>
+            <option value="Niger">Niger</option>
+            <option value="Nigeria">Nigeria</option>
+            <option value="North Korea">North Korea</option>
+            <option value="North Macedonia">North Macedonia</option>
+            <option value="Norway">Norway</option>
+            <option value="Oman">Oman</option>
+            <option value="Pakistan">Pakistan</option>
+            <option value="Palau">Palau</option>
+            <option value="Palestine">Palestine</option>
+            <option value="Panama">Panama</option>
+            <option value="Papua New Guinea">Papua New Guinea</option>
+            <option value="Paraguay">Paraguay</option>
+            <option value="Peru">Peru</option>
+            <option value="Philippines">Philippines</option>
+            <option value="Poland">Poland</option>
+            <option value="Portugal">Portugal</option>
+            <option value="Qatar">Qatar</option>
+            <option value="Romania">Romania</option>
+            <option value="Russia">Russia</option>
+            <option value="Rwanda">Rwanda</option>
+            <option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option>
+            <option value="Saint Lucia">Saint Lucia</option>
+            <option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option>
+            <option value="Samoa">Samoa</option>
+            <option value="San Marino">San Marino</option>
+            <option value="Sao Tome and Principe">Sao Tome and Principe</option>
+            <option value="Saudi Arabia">Saudi Arabia</option>
+            <option value="Senegal">Senegal</option>
+            <option value="Serbia">Serbia</option>
+            <option value="Seychelles">Seychelles</option>
+            <option value="Sierra Leone">Sierra Leone</option>
+            <option value="Singapore">Singapore</option>
+            <option value="Slovakia">Slovakia</option>
+            <option value="Slovenia">Slovenia</option>
+            <option value="Solomon Islands">Solomon Islands</option>
+            <option value="Somalia">Somalia</option>
+            <option value="South Africa">South Africa</option>
+            <option value="South Korea">South Korea</option>
+            <option value="South Sudan">South Sudan</option>
+            <option value="Spain">Spain</option>
+            <option value="Sri Lanka">Sri Lanka</option>
+            <option value="Sudan">Sudan</option>
+            <option value="Suriname">Suriname</option>
+            <option value="Sweden">Sweden</option>
+            <option value="Switzerland">Switzerland</option>
+            <option value="Syria">Syria</option>
+            <option value="Taiwan">Taiwan</option>
+            <option value="Tajikistan">Tajikistan</option>
+            <option value="Tanzania">Tanzania</option>
+            <option value="Thailand">Thailand</option>
+            <option value="Timor-Leste">Timor-Leste</option>
+            <option value="Togo">Togo</option>
+            <option value="Tonga">Tonga</option>
+            <option value="Trinidad and Tobago">Trinidad and Tobago</option>
+            <option value="Tunisia">Tunisia</option>
+            <option value="Turkey">Turkey</option>
+            <option value="Turkmenistan">Turkmenistan</option>
+            <option value="Tuvalu">Tuvalu</option>
+            <option value="Uganda">Uganda</option>
+            <option value="Ukraine">Ukraine</option>
+            <option value="United Arab Emirates">United Arab Emirates</option>
+            <option value="United Kingdom">United Kingdom</option>
+            <option value="United States of America">United States of America</option>
+            <option value="Uruguay">Uruguay</option>
+            <option value="Uzbekistan">Uzbekistan</option>
+            <option value="Vanuatu">Vanuatu</option>
+            <option value="Vatican City">Vatican City</option>
+            <option value="Venezuela">Venezuela</option>
+            <option value="Vietnam">Vietnam</option>
+            <option value="Yemen">Yemen</option>
+            <option value="Zambia">Zambia</option>
+            <option value="Zimbabwe">Zimbabwe</option>
+          </select>
+
+          <label>Region / City *</label>
+          <input type="text" id="region" placeholder="e.g., Algiers, Oran, Constantine" required>
+
+          <label>Phone Number *</label>
+          <input type="tel" id="phoneNumber" required>
+
+          <label>Images (up to 6 - optional)</label>
+          <input type="file" id="images" multiple accept="image/*">
+          <div class="images-preview" id="preview"></div>
+<label style="margin-top:15px;">
+  <input type="checkbox" id="termsCheckbox" required>
+  I confirm that I am solely responsible for the content of this listing. 
+</label>
+
+          <button type="button" id="submit-listing-btn" class="btn-primary">Publish Listing</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="search-container">
+
+  <!-- فلتر الدولة -->
+  <select id="countryFilter" class="search-input">
+    <option value="">🌍 All Countries</option>
+    <option value="">Select Country</option>
+            <option value="Afghanistan">Afghanistan</option>
+            <option value="Albania">Albania</option>
+            <option value="Algeria">Algeria</option>
+            <option value="Andorra">Andorra</option>
+            <option value="Angola">Angola</option>
+            <option value="Antigua and Barbuda">Antigua and Barbuda</option>
+            <option value="Argentina">Argentina</option>
+            <option value="Armenia">Armenia</option>
+            <option value="Australia">Australia</option>
+            <option value="Austria">Austria</option>
+            <option value="Azerbaijan">Azerbaijan</option>
+            <option value="Bahamas">Bahamas</option>
+            <option value="Bahrain">Bahrain</option>
+            <option value="Bangladesh">Bangladesh</option>
+            <option value="Barbados">Barbados</option>
+            <option value="Belarus">Belarus</option>
+            <option value="Belgium">Belgium</option>
+            <option value="Belize">Belize</option>
+            <option value="Benin">Benin</option>
+            <option value="Bhutan">Bhutan</option>
+            <option value="Bolivia">Bolivia</option>
+            <option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
+            <option value="Botswana">Botswana</option>
+            <option value="Brazil">Brazil</option>
+            <option value="Brunei">Brunei</option>
+            <option value="Bulgaria">Bulgaria</option>
+            <option value="Burkina Faso">Burkina Faso</option>
+            <option value="Burundi">Burundi</option>
+            <option value="Cabo Verde">Cabo Verde</option>
+            <option value="Cambodia">Cambodia</option>
+            <option value="Cameroon">Cameroon</option>
+            <option value="Canada">Canada</option>
+            <option value="Central African Republic">Central African Republic</option>
+            <option value="Chad">Chad</option>
+            <option value="Chile">Chile</option>
+            <option value="China">China</option>
+            <option value="Colombia">Colombia</option>
+            <option value="Comoros">Comoros</option>
+            <option value="Congo (Congo-Brazzaville)">Congo (Congo-Brazzaville)</option>
+            <option value="Costa Rica">Costa Rica</option>
+            <option value="Croatia">Croatia</option>
+            <option value="Cuba">Cuba</option>
+            <option value="Cyprus">Cyprus</option>
+            <option value="Czechia (Czech Republic)">Czechia (Czech Republic)</option>
+            <option value="Denmark">Denmark</option>
+            <option value="Djibouti">Djibouti</option>
+            <option value="Dominica">Dominica</option>
+            <option value="Dominican Republic">Dominican Republic</option>
+            <option value="Ecuador">Ecuador</option>
+            <option value="Egypt">Egypt</option>
+            <option value="El Salvador">El Salvador</option>
+            <option value="Equatorial Guinea">Equatorial Guinea</option>
+            <option value="Eritrea">Eritrea</option>
+            <option value="Estonia">Estonia</option>
+            <option value="Eswatini (Swaziland)">Eswatini (Swaziland)</option>
+            <option value="Ethiopia">Ethiopia</option>
+            <option value="Fiji">Fiji</option>
+            <option value="Finland">Finland</option>
+            <option value="France">France</option>
+            <option value="Gabon">Gabon</option>
+            <option value="Gambia">Gambia</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Germany">Germany</option>
+            <option value="Ghana">Ghana</option>
+            <option value="Greece">Greece</option>
+            <option value="Grenada">Grenada</option>
+            <option value="Guatemala">Guatemala</option>
+            <option value="Guinea">Guinea</option>
+            <option value="Guinea-Bissau">Guinea-Bissau</option>
+            <option value="Guyana">Guyana</option>
+            <option value="Haiti">Haiti</option>
+            <option value="Honduras">Honduras</option>
+            <option value="Hungary">Hungary</option>
+            <option value="Iceland">Iceland</option>
+            <option value="India">India</option>
+            <option value="Indonesia">Indonesia</option>
+            <option value="Iran">Iran</option>
+            <option value="Iraq">Iraq</option>
+            <option value="Ireland">Ireland</option>
+            <option value="Israel">Israel</option>
+            <option value="Italy">Italy</option>
+            <option value="Jamaica">Jamaica</option>
+            <option value="Japan">Japan</option>
+            <option value="Jordan">Jordan</option>
+            <option value="Kazakhstan">Kazakhstan</option>
+            <option value="Kenya">Kenya</option>
+            <option value="Kiribati">Kiribati</option>
+            <option value="Kosovo">Kosovo</option>
+            <option value="Kuwait">Kuwait</option>
+            <option value="Kyrgyzstan">Kyrgyzstan</option>
+            <option value="Laos">Laos</option>
+            <option value="Latvia">Latvia</option>
+            <option value="Lebanon">Lebanon</option>
+            <option value="Lesotho">Lesotho</option>
+            <option value="Liberia">Liberia</option>
+            <option value="Libya">Libya</option>
+            <option value="Liechtenstein">Liechtenstein</option>
+            <option value="Lithuania">Lithuania</option>
+            <option value="Luxembourg">Luxembourg</option>
+            <option value="Madagascar">Madagascar</option>
+            <option value="Malawi">Malawi</option>
+            <option value="Malaysia">Malaysia</option>
+            <option value="Maldives">Maldives</option>
+            <option value="Mali">Mali</option>
+            <option value="Malta">Malta</option>
+            <option value="Marshall Islands">Marshall Islands</option>
+            <option value="Mauritania">Mauritania</option>
+            <option value="Mauritius">Mauritius</option>
+            <option value="Mexico">Mexico</option>
+            <option value="Micronesia">Micronesia</option>
+            <option value="Moldova">Moldova</option>
+            <option value="Monaco">Monaco</option>
+            <option value="Mongolia">Mongolia</option>
+            <option value="Montenegro">Montenegro</option>
+            <option value="Morocco">Morocco</option>
+            <option value="Mozambique">Mozambique</option>
+            <option value="Myanmar (Burma)">Myanmar (Burma)</option>
+            <option value="Namibia">Namibia</option>
+            <option value="Nauru">Nauru</option>
+            <option value="Nepal">Nepal</option>
+            <option value="Netherlands">Netherlands</option>
+            <option value="New Zealand">New Zealand</option>
+            <option value="Nicaragua">Nicaragua</option>
+            <option value="Niger">Niger</option>
+            <option value="Nigeria">Nigeria</option>
+            <option value="North Korea">North Korea</option>
+            <option value="North Macedonia">North Macedonia</option>
+            <option value="Norway">Norway</option>
+            <option value="Oman">Oman</option>
+            <option value="Pakistan">Pakistan</option>
+            <option value="Palau">Palau</option>
+            <option value="Palestine">Palestine</option>
+            <option value="Panama">Panama</option>
+            <option value="Papua New Guinea">Papua New Guinea</option>
+            <option value="Paraguay">Paraguay</option>
+            <option value="Peru">Peru</option>
+            <option value="Philippines">Philippines</option>
+            <option value="Poland">Poland</option>
+            <option value="Portugal">Portugal</option>
+            <option value="Qatar">Qatar</option>
+            <option value="Romania">Romania</option>
+            <option value="Russia">Russia</option>
+            <option value="Rwanda">Rwanda</option>
+            <option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option>
+            <option value="Saint Lucia">Saint Lucia</option>
+            <option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option>
+            <option value="Samoa">Samoa</option>
+            <option value="San Marino">San Marino</option>
+            <option value="Sao Tome and Principe">Sao Tome and Principe</option>
+            <option value="Saudi Arabia">Saudi Arabia</option>
+            <option value="Senegal">Senegal</option>
+            <option value="Serbia">Serbia</option>
+            <option value="Seychelles">Seychelles</option>
+            <option value="Sierra Leone">Sierra Leone</option>
+            <option value="Singapore">Singapore</option>
+            <option value="Slovakia">Slovakia</option>
+            <option value="Slovenia">Slovenia</option>
+            <option value="Solomon Islands">Solomon Islands</option>
+            <option value="Somalia">Somalia</option>
+            <option value="South Africa">South Africa</option>
+            <option value="South Korea">South Korea</option>
+            <option value="South Sudan">South Sudan</option>
+            <option value="Spain">Spain</option>
+            <option value="Sri Lanka">Sri Lanka</option>
+            <option value="Sudan">Sudan</option>
+            <option value="Suriname">Suriname</option>
+            <option value="Sweden">Sweden</option>
+            <option value="Switzerland">Switzerland</option>
+            <option value="Syria">Syria</option>
+            <option value="Taiwan">Taiwan</option>
+            <option value="Tajikistan">Tajikistan</option>
+            <option value="Tanzania">Tanzania</option>
+            <option value="Thailand">Thailand</option>
+            <option value="Timor-Leste">Timor-Leste</option>
+            <option value="Togo">Togo</option>
+            <option value="Tonga">Tonga</option>
+            <option value="Trinidad and Tobago">Trinidad and Tobago</option>
+            <option value="Tunisia">Tunisia</option>
+            <option value="Turkey">Turkey</option>
+            <option value="Turkmenistan">Turkmenistan</option>
+            <option value="Tuvalu">Tuvalu</option>
+            <option value="Uganda">Uganda</option>
+            <option value="Ukraine">Ukraine</option>
+            <option value="United Arab Emirates">United Arab Emirates</option>
+            <option value="United Kingdom">United Kingdom</option>
+            <option value="United States of America">United States of America</option>
+            <option value="Uruguay">Uruguay</option>
+            <option value="Uzbekistan">Uzbekistan</option>
+            <option value="Vanuatu">Vanuatu</option>
+            <option value="Vatican City">Vatican City</option>
+            <option value="Venezuela">Venezuela</option>
+            <option value="Vietnam">Vietnam</option>
+            <option value="Yemen">Yemen</option>
+            <option value="Zambia">Zambia</option>
+            <option value="Zimbabwe">Zimbabwe</option>
+  </select>
+
+  <!-- البحث -->
+  <input type="text" id="searchInput" class="search-input"
+         placeholder="Search by title, make, model, region or country...">
+
+</div>
+
+  <div id="listings-section" class="card hidden">
+    <h2>All Listings</h2>
+    <div id="listings-list">
+      <p>Loading listings...</p>
+    </div>
+  </div>
+
+  <script>
+    const BACKEND_URL = 'https://cexpi-backend.onrender.com';
+let piToken = null;
+    
+    Pi.init({ version: "2.0", sandbox: false });
+
+    let currentUser = null;
+    let allListings = [];
+
+    function onIncompletePaymentFound(payment) {
+      alert("Pending payment detected. Completing it automatically...");
+      fetch(`${BACKEND_URL}/api/complete-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentId: payment.identifier,
+          txid: payment.transaction ? payment.transaction.txid : null,
+          piUid: currentUser ? currentUser.uid : null
+        })
+      });
+      return Promise.resolve();
+    }
+
+    document.getElementById('login-btn').onclick = async () => {
+     if (!document.getElementById('acceptPolicies').checked) {
+    alert("You must accept the Terms of Service and Privacy Policy to continue.");
+    return;
+  }
+      try {
+        const scopes = ['username', 'payments'];
+        const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+        piToken = auth.accessToken;
+        currentUser = auth.user;
+
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('app-section').classList.remove('hidden');
+        document.getElementById('listings-section').classList.remove('hidden');
+        document.getElementById('status').innerHTML = `Welcome ${currentUser.username}!`;
+
+        loadListings();
+      } catch (err) {
+        alert("Login error: " + err.message);
+        console.error(err);
+      }
+    };
+
+    document.getElementById('images').onchange = (e) => {
+      const preview = document.getElementById('preview');
+      preview.innerHTML = '';
+      const files = e.target.files;
+      if (files.length > 6) {
+        alert("Maximum 6 images allowed");
+        e.target.value = '';
+        return;
+      }
+      for (let file of files) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        preview.appendChild(img);
+      }
+    };
+
+    document.getElementById('add-listing-btn').onclick = async () => {
+      if (!currentUser) return alert("Please login first");
+
+      const payRes = await fetch(`${BACKEND_URL}/api/create-listing-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ piUid: currentUser.uid })
+      });
+      const payData = await payRes.json();
+      if (!payData.success) return alert("Payment setup failed");
+
+      const payment = {
+        amount: 0.5,
+        memo: payData.memo,
+        metadata: payData.metadata
+      };
+
+      const callbacks = {
+        onReadyForServerApproval: async (paymentId) => {
+          await fetch(`${BACKEND_URL}/api/approve-payment`, {
+            method: 'POST',
+            headers: {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${piToken}`
+},
+
+            body: JSON.stringify({ paymentId })
+          });
+        },
+        onReadyForServerCompletion: async (paymentId, txid) => {
+          await fetch(`${BACKEND_URL}/api/complete-payment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentId, txid, piUid: currentUser.uid })
+          });
+          alert("Payment successful! Now fill in your listing details.");
+          document.getElementById('add-listing-btn').classList.add('hidden');
+          document.getElementById('listing-form').classList.remove('hidden');
+        },
+        onCancel: () => alert("Payment cancelled"),
+        onError: (error) => alert("Payment error: " + error.message)
+      };
+
+      Pi.createPayment(payment, callbacks);
+    };
+
+    document.getElementById('submit-listing-btn').onclick = async () => {
+     if (!document.getElementById('termsCheckbox').checked) {
+  alert("You must accept the disclaimer to publish your listing.");
+  return;
+}
+
+      try {
+        const title = document.getElementById('title').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const priceInPi = parseFloat(document.getElementById('priceInPi').value);
+        const category = document.getElementById('category').value;
+        const make = document.getElementById('make').value.trim();
+        const model = document.getElementById('model').value.trim();
+        const year = document.getElementById('year').value ? parseInt(document.getElementById('year').value) : null;
+        const mileage = document.getElementById('mileage').value ? parseInt(document.getElementById('mileage').value) : null;
+        const country = document.getElementById('country').value;
+        const region = document.getElementById('region').value.trim();
+        const phoneNumber = document.getElementById('phoneNumber').value.trim();
+        const imageFiles = document.getElementById('images').files;
+
+        if (!title || !description || isNaN(priceInPi) || !category || !country || !region || !phoneNumber) {
+          alert("Please fill all required fields (*)");
+          return;
+        }
+
+        if (imageFiles.length > 6) {
+          alert("Maximum 6 images allowed");
+          return;
+        }
+
+        const images = [];
+        for (let file of imageFiles) {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          images.push(await new Promise(resolve => {
+            reader.onload = () => resolve(reader.result);
+          }));
+        }
+
+        const res = await fetch(`${BACKEND_URL}/api/complete-listing`, {
+          method: 'POST',
+          headers: {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${piToken}`
+},
+
+          body: JSON.stringify({
+            piUid: currentUser.uid,
+            title,
+            description,
+            priceInPi,
+            category,
+            make,
+            model,
+            year,
+            mileage,
+            country,
+            region,
+            images,
+            phoneNumber
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Failed to publish listing");
+        }
+
+        alert("Listing published successfully!");
+        document.getElementById('listing-form').classList.add('hidden');
+        document.getElementById('add-listing-btn').classList.remove('hidden');
+        loadListings();
+      } catch (err) {
+        alert("Publish error: " + err.message);
+        console.error(err);
+      }
+    };
+
+    async function loadListings() {
+      const listDiv = document.getElementById('listings-list');
+      listDiv.innerHTML = '<p>Loading listings...</p>';
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/get-listings`);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data = await res.json();
+        
+       allListings = data.listings || [];
+
+// ⬅️ هذا السطر هو الحل
+populateCountryFilter();
+
+applyFilters();
+
+      } catch (err) {
+        listDiv.innerHTML = `<p style="color:red;">Error loading listings: ${err.message}</p>`;
+        console.error("Load listings error:", err);
+      }
+    }
+function applyFilters() {
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  const selectedCountry = document.getElementById('countryFilter').value;
+
+  const filtered = allListings.filter(listing => {
+
+    // فلتر البحث
+    const matchesSearch =
+      listing.title?.toLowerCase().includes(searchTerm) ||
+      listing.make?.toLowerCase().includes(searchTerm) ||
+      listing.model?.toLowerCase().includes(searchTerm) ||
+      listing.region?.toLowerCase().includes(searchTerm) ||
+      listing.country?.toLowerCase().includes(searchTerm);
+
+    // فلتر الدولة
+    const matchesCountry =
+      !selectedCountry || listing.country === selectedCountry;
+
+    return matchesSearch && matchesCountry;
+  });
+
+  displayListings(filtered);
+}
+
+    function displayListings(listings) {
+      const listDiv = document.getElementById('listings-list');
+      listDiv.innerHTML = '';
+
+      if (listings.length === 0) {
+        listDiv.innerHTML = '<p>No listings available yet. Be the first to publish one!</p>';
+        return;
+      }
+
+      listings.forEach(listing => {
+        const item = document.createElement('div');
+        item.classList.add('listing-item');
+
+        item.innerHTML = `
+          <h3>${listing.title || 'No title'}</h3>
+          <p><strong>Price:</strong> ${listing.priceInPi} Pi</p>
+          <p><strong>Category:</strong> ${listing.category || 'N/A'}</p>
+          <p><strong>Make:</strong> ${listing.make || 'N/A'}</p>
+          <p><strong>Model:</strong> ${listing.model || 'N/A'}</p>
+          <p><strong>Year:</strong> ${listing.year || 'N/A'}</p>
+          <p><strong>Mileage:</strong> ${listing.mileage ? listing.mileage + ' km' : 'N/A'}</p>
+          <p><strong>Country:</strong> ${listing.country || 'N/A'}</p>
+          <p><strong>Region:</strong> ${listing.region || 'N/A'}</p>
+          <p><strong>Phone:</strong> ${listing.phoneNumber || 'N/A'}</p>
+          <p><strong>Description:</strong> ${listing.description || 'No description'}</p>
+        `;
+
+        if (listing.images && listing.images.length > 0) {
+          let imagesHtml = '<div class="listing-images">';
+          listing.images.forEach(img => {
+            imagesHtml += `<img src="${img}" alt="Vehicle image">`;
+          });
+          imagesHtml += '</div>';
+          item.innerHTML += imagesHtml;
+        }
+
+        if (currentUser && listing.sellerUid === currentUser.uid) {
+          const deleteBtn = document.createElement('button');
+          deleteBtn.classList.add('btn-delete');
+          deleteBtn.textContent = 'Delete Listing';
+          deleteBtn.onclick = async () => {
+            if (confirm("Are you sure you want to delete this listing?")) {
+              const delRes = await fetch(`${BACKEND_URL}/api/delete-listing`, {
+                method: 'POST',
+               headers: {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${piToken}`
+},
+                body: JSON.stringify({ listingId: listing._id, piUid: currentUser.uid })
+              });
+              if (delRes.ok) {
+                alert("Listing deleted!");
+                loadListings();
+              } else {
+                alert("Failed to delete listing");
+              }
+            }
+          };
+          item.appendChild(deleteBtn);
+        }
+
+        listDiv.appendChild(item);
+      });
+    }
+
+    document.getElementById('searchInput')
+  .addEventListener('input', applyFilters);
+
+document.getElementById('countryFilter')
+  .addEventListener('change', applyFilters);
+function populateCountryFilter() {
+  const countrySelect = document.getElementById('country');
+  const filterSelect = document.getElementById('countryFilter');
+
+  // مسح الدول القديمة (نترك All Countries)
+  filterSelect.innerHTML = '<option value="">🌍 All Countries</option>';
+
+  for (let option of countrySelect.options) {
+    if (option.value) {
+      const newOption = document.createElement('option');
+      newOption.value = option.value;
+      newOption.textContent = option.textContent;
+      filterSelect.appendChild(newOption);
+    }
+  }
+}
+document.getElementById('logout-btn').onclick = () => {
+  // حذف بيانات الجلسة
+  currentUser = null;
+  piToken = null;
+
+  // إخفاء التطبيق
+  document.getElementById('app-section').classList.add('hidden');
+  document.getElementById('listings-section').classList.add('hidden');
+
+  // إظهار صفحة تسجيل الدخول
+  document.getElementById('login-section').classList.remove('hidden');
+
+  // إعادة الزر والنموذج لحالتهم الأصلية
+  document.getElementById('add-listing-btn').classList.remove('hidden');
+  document.getElementById('listing-form').classList.add('hidden');
+
+  // مسح الرسالة
+  document.getElementById('status').innerHTML = '';
+
+  alert("You have been logged out.");
+};
+
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
