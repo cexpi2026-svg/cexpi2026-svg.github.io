@@ -718,6 +718,10 @@ let piToken = null;
     }
 
     alert("✅ Listing published successfully!");
+// 🔓 إعادة فتح الزر بعد النجاح
+isPublishing = false;
+submitBtn.disabled = false;
+submitBtn.textContent = "Publish Listing";
 
     document.getElementById('listing-form').classList.add('hidden');
     document.getElementById('add-listing-btn').classList.remove('hidden');
@@ -895,6 +899,7 @@ document.getElementById('logout-btn').onclick = () => {
   </script>
 </body>
 </html>
+
 
 
 
