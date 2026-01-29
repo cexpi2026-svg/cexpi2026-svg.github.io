@@ -530,6 +530,10 @@
   </div>
 
   <script>
+
+    let isPublishing = false;
+
+    
     const BACKEND_URL = 'https://cexpi-backend-pwgi.onrender.com';
 let piToken = null;
     
@@ -637,83 +641,100 @@ let piToken = null;
       Pi.createPayment(payment, callbacks);
     };
 
-    document.getElementById('submit-listing-btn').onclick = async () => {
-     if (!document.getElementById('termsCheckbox').checked) {
-  alert("You must accept the disclaimer to publish your listing.");
-  return;
-}
+   document.getElementById('submit-listing-btn').onclick = async () => {
 
-      try {
-        const title = document.getElementById('title').value.trim();
-        const description = document.getElementById('description').value.trim();
-        const priceInPi = parseFloat(document.getElementById('priceInPi').value);
-        const category = document.getElementById('category').value;
-        const mark = document.getElementById('mark').value.trim();
-        const model = document.getElementById('model').value.trim();
-        const year = document.getElementById('year').value ? parseInt(document.getElementById('year').value) : null;
-        const mileage = document.getElementById('mileage').value ? parseInt(document.getElementById('mileage').value) : null;
-        const country = document.getElementById('country').value;
-        const region = document.getElementById('region').value.trim();
-        const phoneNumber = document.getElementById('phoneNumber').value.trim();
-        const imageFiles = document.getElementById('images').files;
+  // 🛑 منع الضغط المتكرر
+  if (isPublishing) return;
 
-        if (!title || !description || isNaN(priceInPi) || !category || !country || !region || !phoneNumber) {
-          alert("Please fill all required fields (*)");
-          return;
-        }
+  if (!document.getElementById('termsCheckbox').checked) {
+    alert("You must accept the disclaimer to publish your listing.");
+    return;
+  }
 
-        if (imageFiles.length > 6) {
-          alert("Maximum 6 images allowed");
-          return;
-        }
+  const submitBtn = document.getElementById('submit-listing-btn');
 
-        const images = [];
-        for (let file of imageFiles) {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          images.push(await new Promise(resolve => {
-            reader.onload = () => resolve(reader.result);
-          }));
-        }
+  try {
+    // 🔒 قفل الزر
+    isPublishing = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Publishing... ⏳";
 
-        const res = await fetch(`${BACKEND_URL}/api/complete-listing`, {
-          method: 'POST',
-          headers: {
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${piToken}`
-},
+    const title = document.getElementById('title').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const priceInPi = parseFloat(document.getElementById('priceInPi').value);
+    const category = document.getElementById('category').value;
+    const mark = document.getElementById('mark').value.trim();
+    const model = document.getElementById('model').value.trim();
+    const year = document.getElementById('year').value ? parseInt(document.getElementById('year').value) : null;
+    const mileage = document.getElementById('mileage').value ? parseInt(document.getElementById('mileage').value) : null;
+    const country = document.getElementById('country').value;
+    const region = document.getElementById('region').value.trim();
+    const phoneNumber = document.getElementById('phoneNumber').value.trim();
+    const imageFiles = document.getElementById('images').files;
 
-          body: JSON.stringify({
-            piUid: currentUser.uid,
-            title,
-            description,
-            priceInPi,
-            category,
-            mark,
-            model,
-            year,
-            mileage,
-            country,
-            region,
-            images,
-            phoneNumber
-          })
-        });
+    if (!title || !description || isNaN(priceInPi) || !category || !country || !region || !phoneNumber) {
+      throw new Error("Please fill all required fields (*)");
+    }
 
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Failed to publish listing");
-        }
+    if (imageFiles.length > 6) {
+      throw new Error("Maximum 6 images allowed");
+    }
 
-        alert("Listing published successfully!");
-        document.getElementById('listing-form').classList.add('hidden');
-        document.getElementById('add-listing-btn').classList.remove('hidden');
-        loadListings();
-      } catch (err) {
-        alert("Publish error: " + err.message);
-        console.error(err);
-      }
-    };
+    const images = [];
+    for (let file of imageFiles) {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      images.push(await new Promise(resolve => {
+        reader.onload = () => resolve(reader.result);
+      }));
+    }
+
+    const res = await fetch(`${BACKEND_URL}/api/complete-listing`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${piToken}`
+      },
+      body: JSON.stringify({
+        piUid: currentUser.uid,
+        title,
+        description,
+        priceInPi,
+        category,
+        mark,
+        model,
+        year,
+        mileage,
+        country,
+        region,
+        images,
+        phoneNumber
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Failed to publish listing");
+    }
+
+    alert("✅ Listing published successfully!");
+
+    document.getElementById('listing-form').classList.add('hidden');
+    document.getElementById('add-listing-btn').classList.remove('hidden');
+    loadListings();
+
+  } catch (err) {
+    alert("Publish error: " + err.message);
+
+    // 🔓 إعادة فتح الزر عند الخطأ
+    isPublishing = false;
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Publish Listing";
+
+    console.error(err);
+  }
+};
+
 
     async function loadListings() {
       const listDiv = document.getElementById('listings-list');
@@ -874,6 +895,7 @@ document.getElementById('logout-btn').onclick = () => {
   </script>
 </body>
 </html>
+
 
 
 
