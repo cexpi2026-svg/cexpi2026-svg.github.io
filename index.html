@@ -561,6 +561,41 @@
 
     let isPublishing = false;
 
+// ===== Image Slider (GLOBAL) =====
+function createImageSlider(images) {
+  let index = 0;
+
+  const slider = document.createElement('div');
+  slider.className = 'image-slider';
+
+  const img = document.createElement('img');
+  img.src = images[0];
+
+  const prev = document.createElement('button');
+  prev.className = 'slider-btn prev';
+  prev.textContent = '‹';
+
+  const next = document.createElement('button');
+  next.className = 'slider-btn next';
+  next.textContent = '›';
+
+  prev.onclick = () => {
+    index = (index - 1 + images.length) % images.length;
+    img.src = images[index];
+  };
+
+  next.onclick = () => {
+    index = (index + 1) % images.length;
+    img.src = images[index];
+  };
+
+  slider.appendChild(prev);
+  slider.appendChild(img);
+  slider.appendChild(next);
+
+  return slider;
+}
+
     
     const BACKEND_URL = 'https://cexpi-backend-pwgi.onrender.com';
 let piToken = null;
@@ -817,39 +852,6 @@ function applyFilters() {
   });
 
 
-  function createImageSlider(images) {
-  let index = 0;
-
-  const slider = document.createElement('div');
-  slider.className = 'image-slider';
-
-  const img = document.createElement('img');
-  img.src = images[0];
-
-  const prev = document.createElement('button');
-  prev.className = 'slider-btn prev';
-  prev.textContent = '‹';
-
-  const next = document.createElement('button');
-  next.className = 'slider-btn next';
-  next.textContent = '›';
-
-  prev.onclick = () => {
-    index = (index - 1 + images.length) % images.length;
-    img.src = images[index];
-  };
-
-  next.onclick = () => {
-    index = (index + 1) % images.length;
-    img.src = images[index];
-  };
-
-  slider.appendChild(prev);
-  slider.appendChild(img);
-  slider.appendChild(next);
-
-  return slider;
-}
 
   
   displayListings(filtered);
@@ -964,6 +966,7 @@ document.getElementById('logout-btn').onclick = () => {
   </script>
 </body>
 </html>
+
 
 
 
