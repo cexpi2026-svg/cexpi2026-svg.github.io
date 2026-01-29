@@ -647,9 +647,11 @@ let piToken = null;
   if (isPublishing) return;
 
   if (!document.getElementById('termsCheckbox').checked) {
-    alert("You must accept the disclaimer to publish your listing.");
-    return;
-  }
+  isPublishing = false;
+  alert("You must accept the disclaimer to publish your listing.");
+  return;
+}
+
 
   const submitBtn = document.getElementById('submit-listing-btn');
 
@@ -899,6 +901,7 @@ document.getElementById('logout-btn').onclick = () => {
   </script>
 </body>
 </html>
+
 
 
 
