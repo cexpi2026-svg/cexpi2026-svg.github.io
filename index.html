@@ -645,10 +645,11 @@ let piToken = null;
 
   // 🛑 منع الضغط المتكرر
   if (isPublishing) return;
-
+isPublishing = true;
   if (!document.getElementById('termsCheckbox').checked) {
-  isPublishing = false;
+
   alert("You must accept the disclaimer to publish your listing.");
+    isPublishing = false;
   return;
 }
 
@@ -656,8 +657,8 @@ let piToken = null;
   const submitBtn = document.getElementById('submit-listing-btn');
 
   try {
-    // 🔒 قفل الزر
-    isPublishing = true;
+  
+    
     submitBtn.disabled = true;
     submitBtn.textContent = "Publishing... ⏳";
 
@@ -901,6 +902,7 @@ document.getElementById('logout-btn').onclick = () => {
   </script>
 </body>
 </html>
+
 
 
 
