@@ -81,8 +81,8 @@
             <option value="motorcycle">Motorcycle</option>
           </select>
 
-          <label>Make (Brand)</label>
-          <input type="text" id="make">
+          <label>Mark (Brand)</label>
+          <input type="text" id="mark">
 
           <label>Model</label>
           <input type="text" id="model">
@@ -518,7 +518,7 @@
 
   <!-- البحث -->
   <input type="text" id="searchInput" class="search-input"
-         placeholder="Search by title, make, model, region or country...">
+         placeholder="Search by title, mark, model, region or country...">
 
 </div>
 
@@ -648,7 +648,7 @@ let piToken = null;
         const description = document.getElementById('description').value.trim();
         const priceInPi = parseFloat(document.getElementById('priceInPi').value);
         const category = document.getElementById('category').value;
-        const make = document.getElementById('make').value.trim();
+        const mark = document.getElementById('mark').value.trim();
         const model = document.getElementById('model').value.trim();
         const year = document.getElementById('year').value ? parseInt(document.getElementById('year').value) : null;
         const mileage = document.getElementById('mileage').value ? parseInt(document.getElementById('mileage').value) : null;
@@ -689,7 +689,7 @@ let piToken = null;
             description,
             priceInPi,
             category,
-            make,
+            mark,
             model,
             year,
             mileage,
@@ -748,7 +748,7 @@ function applyFilters() {
     // فلتر البحث
     const matchesSearch =
       listing.title?.toLowerCase().includes(searchTerm) ||
-      listing.make?.toLowerCase().includes(searchTerm) ||
+      listing.mark?.toLowerCase().includes(searchTerm) ||
       listing.model?.toLowerCase().includes(searchTerm) ||
       listing.region?.toLowerCase().includes(searchTerm) ||
       listing.country?.toLowerCase().includes(searchTerm);
@@ -780,7 +780,7 @@ function applyFilters() {
           <h3>${listing.title || 'No title'}</h3>
           <p><strong>Price:</strong> ${listing.priceInPi} Pi</p>
           <p><strong>Category:</strong> ${listing.category || 'N/A'}</p>
-          <p><strong>Make:</strong> ${listing.make || 'N/A'}</p>
+          <p><strong>Mark:</strong> ${listing.mark || 'N/A'}</p>
           <p><strong>Model:</strong> ${listing.model || 'N/A'}</p>
           <p><strong>Year:</strong> ${listing.year || 'N/A'}</p>
           <p><strong>Mileage:</strong> ${listing.mileage ? listing.mileage + ' km' : 'N/A'}</p>
@@ -874,6 +874,7 @@ document.getElementById('logout-btn').onclick = () => {
   </script>
 </body>
 </html>
+
 
 
 
