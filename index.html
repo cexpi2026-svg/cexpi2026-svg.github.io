@@ -68,6 +68,7 @@
 </div>
       
       <button id="add-listing-btn" class="btn-primary">Add New Listing (Pay 0.5 Pi)</button>
+      <div id="paymentMsg" style="margin-top:10px; font-weight:bold; text-align:center;"></div>
 
       <div id="listing-form" class="hidden">
         <h2>Add Your Vehicle Listing</h2>
@@ -316,6 +317,7 @@
 </label>
 
           <button type="button" id="submit-listing-btn" class="btn-primary">Publish Listing</button>
+          <div id="listingMsg" style="margin-top:10px; font-weight:bold; text-align:center;"></div>
         </form>
       </div>
     </div>
@@ -564,6 +566,16 @@ let allListings = [];
       return typeof src === 'string' && /^data:image\/(jpeg|jpg|png|gif|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(src);
     }
 
+    // يعرض رسالة ظاهرة داخل الصفحة (بديل موثوق عن alert الذي قد يُحجب داخل Pi Browser)
+    // كما يطبع الرسالة في console.log حتى تظهر عند فحص الصفحة من المتصفح
+    function showMessage(elementId, message, isError) {
+      console.log((isError ? '[ERROR] ' : '[INFO] ') + elementId + ': ' + message);
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      el.textContent = message;
+      el.style.color = isError ? '#f44336' : '#2e7d32';
+    }
+
     // ================= PROMO A2U CLAIM =================
 async function checkPromoStatus() {
   if (!currentUser || !piToken) return;
@@ -695,6 +707,7 @@ document.getElementById('claim-promo-btn').onclick = async () => {
 
     document.getElementById('add-listing-btn').onclick = async () => {
       if (!currentUser || !piToken) return alert("Please login first");
+      showMessage('paymentMsg', 'Setting up payment...', false);
 
       const payRes = await fetch(`${BACKEND_URL}/api/create-listing-payment`, {
         method: 'POST',
@@ -705,7 +718,10 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         body: JSON.stringify({})
       });
       const payData = await payRes.json();
-      if (!payData.success) return alert("Payment setup failed");
+      if (!payData.success) {
+        showMessage('paymentMsg', 'Payment setup failed: ' + (payData.error || payRes.status), true);
+        return alert("Payment setup failed");
+      }
 
       const payment = {
         amount: 0.5,
@@ -715,6 +731,7 @@ document.getElementById('claim-promo-btn').onclick = async () => {
 
       const callbacks = {
         onReadyForServerApproval: async (paymentId) => {
+          showMessage('paymentMsg', 'Approving payment...', false);
           try {
             const r = await fetch(`${BACKEND_URL}/api/approve-payment`, {
               method: 'POST',
@@ -727,10 +744,14 @@ document.getElementById('claim-promo-btn').onclick = async () => {
             if (!r.ok) {
               const err = await r.json().catch(() => ({}));
               console.error('Approve payment failed:', r.status, err);
+              showMessage('paymentMsg', 'Payment approval failed: ' + (err.error || ('HTTP ' + r.status)), true);
               alert("Payment approval failed: " + (err.error || ('HTTP ' + r.status)));
+            } else {
+              showMessage('paymentMsg', 'Payment approved, waiting for confirmation...', false);
             }
           } catch (e) {
             console.error('Approve payment network error:', e);
+            showMessage('paymentMsg', 'Network error while approving payment: ' + e.message, true);
             alert("Network error while approving payment: " + e.message);
           }
         },
@@ -744,19 +765,22 @@ document.getElementById('claim-promo-btn').onclick = async () => {
             if (!r.ok) {
               const err = await r.json().catch(() => ({}));
               console.error('Complete payment failed:', r.status, err);
+              showMessage('paymentMsg', 'Payment completion failed: ' + (err.error || ('HTTP ' + r.status)), true);
               alert("Payment completion failed: " + (err.error || ('HTTP ' + r.status)));
               return;
             }
+            showMessage('paymentMsg', 'Payment successful! Now fill in your listing details.', false);
             alert("Payment successful! Now fill in your listing details.");
             document.getElementById('add-listing-btn').classList.add('hidden');
             document.getElementById('listing-form').classList.remove('hidden');
           } catch (e) {
             console.error('Complete payment network error:', e);
+            showMessage('paymentMsg', 'Network error while completing payment: ' + e.message, true);
             alert("Network error while completing payment: " + e.message);
           }
         },
-        onCancel: () => alert("Payment cancelled"),
-        onError: (error) => alert("Payment error: " + error.message)
+        onCancel: () => showMessage('paymentMsg', 'Payment cancelled', true),
+        onError: (error) => showMessage('paymentMsg', 'Payment error: ' + error.message, true)
       };
 
       Pi.createPayment(payment, callbacks);
@@ -764,7 +788,7 @@ document.getElementById('claim-promo-btn').onclick = async () => {
 
     document.getElementById('submit-listing-btn').onclick = async () => {
      if (!document.getElementById('termsCheckbox').checked) {
-  alert("You must accept the disclaimer to publish your listing.");
+  showMessage('listingMsg', 'You must accept the disclaimer to publish your listing.', true);
   return;
 }
 
@@ -783,14 +807,16 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         const imageFiles = document.getElementById('images').files;
 
         if (!title || !description || isNaN(priceInPi) || !category || !country || !region || !phoneNumber) {
-          alert("Please fill all required fields (*)");
+          showMessage('listingMsg', 'Please fill all required fields (*)', true);
           return;
         }
 
         if (imageFiles.length > 6) {
-          alert("Maximum 6 images allowed");
+          showMessage('listingMsg', 'Maximum 6 images allowed', true);
           return;
         }
+
+        showMessage('listingMsg', 'Publishing your listing...', false);
 
         const images = [];
         for (let file of imageFiles) {
@@ -825,17 +851,19 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         });
 
         if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Failed to publish listing");
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || ('Failed to publish listing (HTTP ' + res.status + ')'));
         }
 
+        showMessage('listingMsg', 'Listing published successfully!', false);
         alert("Listing published successfully!");
         document.getElementById('listing-form').classList.add('hidden');
         document.getElementById('add-listing-btn').classList.remove('hidden');
         loadListings();
       } catch (err) {
-        alert("Publish error: " + err.message);
         console.error(err);
+        showMessage('listingMsg', 'Publish error: ' + err.message, true);
+        alert("Publish error: " + err.message);
       }
     };
 
