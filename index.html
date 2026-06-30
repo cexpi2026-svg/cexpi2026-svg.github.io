@@ -561,9 +561,13 @@ let allListings = [];
         .replace(/'/g, '&#039;');
     }
 
-    // يتأكد أن الصورة هي data URL لصورة فعلية قبل عرضها (يمنع كسر الوسم أو حقن محتوى)
+    // يتأكد أن الصورة هي data URL لصورة فعلية أو رابط Cloudinary آمن قبل عرضها
+    // (يمنع كسر الوسم أو حقن محتوى من إعلانات مستخدمين آخرين)
     function isSafeImageSrc(src) {
-      return typeof src === 'string' && /^data:image\/(jpeg|jpg|png|gif|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(src);
+      if (typeof src !== 'string') return false;
+      const isDataUrl = /^data:image\/(jpeg|jpg|png|gif|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(src);
+      const isCloudinaryUrl = /^https:\/\/res\.cloudinary\.com\/[A-Za-z0-9_-]+\/image\/upload\/.+$/.test(src);
+      return isDataUrl || isCloudinaryUrl;
     }
 
     // يعرض رسالة ظاهرة داخل الصفحة (بديل موثوق عن alert الذي قد يُحجب داخل Pi Browser)
@@ -574,6 +578,57 @@ let allListings = [];
       if (!el) return;
       el.textContent = message;
       el.style.color = isError ? '#f44336' : '#2e7d32';
+    }
+
+    // === CLOUDINARY: رفع الصور مباشرة من المتصفح إلى Cloudinary ===
+    // يستبدل التحويل القديم إلى base64 (الذي كان يعلّق الصفحة بدون أي خطأ إذا فشلت
+    // قراءة أي صورة). الآن: كل صورة تُرفع مباشرة، ونحصل على رابط قصير وآمن (secure_url)
+    // يُخزَّن في MongoDB بدل الصورة نفسها.
+    async function uploadImagesToCloudinary(files) {
+      if (!files || files.length === 0) return [];
+
+      // نطلب توقيع رفع آمن من السيرفر (صالح لمدة قصيرة، مرتبط بالمستخدم المصادق فقط)
+      const sigRes = await fetch(`${BACKEND_URL}/api/cloudinary-signature`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${piToken}`
+        },
+        body: JSON.stringify({})
+      });
+      if (!sigRes.ok) {
+        const err = await sigRes.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to prepare image upload');
+      }
+      const sig = await sigRes.json();
+
+      const uploadedUrls = [];
+      let index = 0;
+      for (const file of files) {
+        index++;
+        showMessage('listingMsg', `Uploading image ${index} of ${files.length}...`, false);
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('api_key', sig.apiKey);
+        formData.append('timestamp', sig.timestamp);
+        formData.append('signature', sig.signature);
+        formData.append('folder', sig.folder);
+
+        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok || !uploadData.secure_url) {
+          throw new Error(`Failed to upload image ${index}: ${(uploadData.error && uploadData.error.message) || 'Unknown error'}`);
+        }
+
+        uploadedUrls.push(uploadData.secure_url);
+      }
+
+      return uploadedUrls;
     }
 
     // ================= PROMO A2U CLAIM =================
@@ -792,6 +847,9 @@ document.getElementById('claim-promo-btn').onclick = async () => {
   return;
 }
 
+      const submitBtn = document.getElementById('submit-listing-btn');
+      submitBtn.disabled = true;
+
       try {
         const title = document.getElementById('title').value.trim();
         const description = document.getElementById('description').value.trim();
@@ -808,24 +866,20 @@ document.getElementById('claim-promo-btn').onclick = async () => {
 
         if (!title || !description || isNaN(priceInPi) || !category || !country || !region || !phoneNumber) {
           showMessage('listingMsg', 'Please fill all required fields (*)', true);
+          submitBtn.disabled = false;
           return;
         }
 
         if (imageFiles.length > 6) {
           showMessage('listingMsg', 'Maximum 6 images allowed', true);
+          submitBtn.disabled = false;
           return;
         }
 
-        showMessage('listingMsg', 'Publishing your listing...', false);
+        // === CLOUDINARY: رفع الصور مباشرة بدل تحويلها إلى base64 ===
+        const images = await uploadImagesToCloudinary(Array.from(imageFiles));
 
-        const images = [];
-        for (let file of imageFiles) {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          images.push(await new Promise(resolve => {
-            reader.onload = () => resolve(reader.result);
-          }));
-        }
+        showMessage('listingMsg', 'Publishing your listing...', false);
 
         const res = await fetch(`${BACKEND_URL}/api/complete-listing`, {
           method: 'POST',
@@ -864,6 +918,8 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         console.error(err);
         showMessage('listingMsg', 'Publish error: ' + err.message, true);
         alert("Publish error: " + err.message);
+      } finally {
+        submitBtn.disabled = false;
       }
     };
 
