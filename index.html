@@ -73,10 +73,10 @@
         <h2>Add Your Vehicle Listing</h2>
         <form id="listingForm">
           <label>Title *</label>
-          <input type="text" id="title" required>
+          <input type="text" id="title" required maxlength="150">
 
           <label>Description *</label>
-          <textarea id="description" rows="4" required></textarea>
+          <textarea id="description" rows="4" required maxlength="3000"></textarea>
 
           <label>Price in Pi *</label>
           <input type="number" id="priceInPi" min="0" step="0.01" required>
@@ -90,10 +90,10 @@
           </select>
 
           <label>Make (Brand)</label>
-          <input type="text" id="make">
+          <input type="text" id="make" maxlength="60">
 
           <label>Model</label>
-          <input type="text" id="model">
+          <input type="text" id="model" maxlength="60">
 
           <label>Year</label>
           <input type="number" id="year" min="1900" max="2026">
@@ -302,13 +302,13 @@
           </select>
 
           <label>Region / City *</label>
-          <input type="text" id="region" placeholder="e.g., Algiers, Oran, Constantine" required>
+          <input type="text" id="region" placeholder="e.g., Algiers, Oran, Constantine" required maxlength="150">
 
           <label>Phone Number *</label>
-          <input type="tel" id="phoneNumber" required>
+          <input type="tel" id="phoneNumber" required maxlength="30">
 
-          <label>Images (up to 6 - optional)</label>
-          <input type="file" id="images" multiple accept="image/*">
+          <label>Images (up to 6 - optional, max 1MB each)</label>
+          <input type="file" id="images" multiple accept="image/png,image/jpeg,image/gif,image/webp">
           <div class="images-preview" id="preview"></div>
 <label style="margin-top:15px;">
   <input type="checkbox" id="termsCheckbox" required>
@@ -547,14 +547,34 @@ Pi.init({ version: "2.0", sandbox: false });
 let currentUser = null;
 let allListings = [];
 
+    // ================= SECURITY HELPERS =================
+    // يمنع XSS المخزّن: أي نص قادم من إعلانات مستخدمين آخرين يُعرض دائماً بعد تنقيته
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // يتأكد أن الصورة هي data URL لصورة فعلية قبل عرضها (يمنع كسر الوسم أو حقن محتوى)
+    function isSafeImageSrc(src) {
+      return typeof src === 'string' && /^data:image\/(jpeg|jpg|png|gif|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(src);
+    }
+
     // ================= PROMO A2U CLAIM =================
 async function checkPromoStatus() {
-  if (!currentUser) return;
+  if (!currentUser || !piToken) return;
   try {
     const res = await fetch(`${BACKEND_URL}/api/promo-status`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ piUid: currentUser.uid })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${piToken}`
+      },
+      body: JSON.stringify({})
     });
     const data = await res.json();
     const statusEl = document.getElementById('promo-status');
@@ -583,12 +603,11 @@ document.getElementById('claim-promo-btn').onclick = async () => {
   try {
     const res = await fetch(`${BACKEND_URL}/api/claim-promo`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        piUid: currentUser.uid,
-        piUsername: currentUser.username,
-        accessToken: piToken
-      })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${piToken}`
+      },
+      body: JSON.stringify({})
     });
     const data = await res.json();
 
@@ -616,8 +635,7 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           paymentId: payment.identifier,
-          txid: payment.transaction ? payment.transaction.txid : null,
-          piUid: currentUser ? currentUser.uid : null
+          txid: payment.transaction ? payment.transaction.txid : null
         })
       });
       return Promise.resolve();
@@ -640,7 +658,7 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         document.getElementById('login-section').classList.add('hidden');
         document.getElementById('app-section').classList.remove('hidden');
         document.getElementById('listings-section').classList.remove('hidden');
-        document.getElementById('status').innerHTML = `Welcome ${currentUser.username}!`;
+        document.getElementById('status').innerHTML = `Welcome ${escapeHtml(currentUser.username)}!`;
 
         loadListings();
         checkPromoStatus(); 
@@ -661,7 +679,14 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         e.target.value = '';
         return;
       }
+      const MAX_IMAGE_BYTES = 1024 * 1024; // 1MB لكل صورة، يطابق حد السيرفر
       for (let file of files) {
+        if (file.size > MAX_IMAGE_BYTES) {
+          alert(`Image "${file.name}" is too large. Max size is 1MB per image.`);
+          e.target.value = '';
+          preview.innerHTML = '';
+          return;
+        }
         const img = document.createElement('img');
         img.src = URL.createObjectURL(file);
         preview.appendChild(img);
@@ -669,12 +694,15 @@ document.getElementById('claim-promo-btn').onclick = async () => {
     };
 
     document.getElementById('add-listing-btn').onclick = async () => {
-      if (!currentUser) return alert("Please login first");
+      if (!currentUser || !piToken) return alert("Please login first");
 
       const payRes = await fetch(`${BACKEND_URL}/api/create-listing-payment`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ piUid: currentUser.uid })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${piToken}`
+        },
+        body: JSON.stringify({})
       });
       const payData = await payRes.json();
       if (!payData.success) return alert("Payment setup failed");
@@ -701,7 +729,7 @@ document.getElementById('claim-promo-btn').onclick = async () => {
           await fetch(`${BACKEND_URL}/api/complete-payment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paymentId, txid, piUid: currentUser.uid })
+            body: JSON.stringify({ paymentId, txid })
           });
           alert("Payment successful! Now fill in your listing details.");
           document.getElementById('add-listing-btn').classList.add('hidden');
@@ -761,7 +789,6 @@ document.getElementById('claim-promo-btn').onclick = async () => {
 },
 
           body: JSON.stringify({
-            piUid: currentUser.uid,
             title,
             description,
             priceInPi,
@@ -812,7 +839,7 @@ populateCountryFilter();
 applyFilters();
 
       } catch (err) {
-        listDiv.innerHTML = `<p style="color:red;">Error loading listings: ${err.message}</p>`;
+        listDiv.innerHTML = `<p style="color:red;">Error loading listings: ${escapeHtml(err.message)}</p>`;
         console.error("Load listings error:", err);
       }
     }
@@ -853,27 +880,35 @@ function applyFilters() {
         const item = document.createElement('div');
         item.classList.add('listing-item');
 
+        // كل القيم القادمة من قاعدة البيانات (وقد تكون من مستخدمين آخرين) تُنقّى دائماً قبل العرض
         item.innerHTML = `
-          <h3>${listing.title || 'No title'}</h3>
-          <p><strong>Price:</strong> ${listing.priceInPi} Pi</p>
-          <p><strong>Category:</strong> ${listing.category || 'N/A'}</p>
-          <p><strong>Make:</strong> ${listing.make || 'N/A'}</p>
-          <p><strong>Model:</strong> ${listing.model || 'N/A'}</p>
-          <p><strong>Year:</strong> ${listing.year || 'N/A'}</p>
-          <p><strong>Mileage:</strong> ${listing.mileage ? listing.mileage + ' km' : 'N/A'}</p>
-          <p><strong>Country:</strong> ${listing.country || 'N/A'}</p>
-          <p><strong>Region:</strong> ${listing.region || 'N/A'}</p>
-          <p><strong>Phone:</strong> ${listing.phoneNumber || 'N/A'}</p>
-          <p><strong>Description:</strong> ${listing.description || 'No description'}</p>
+          <h3>${escapeHtml(listing.title || 'No title')}</h3>
+          <p><strong>Price:</strong> ${escapeHtml(listing.priceInPi)} Pi</p>
+          <p><strong>Category:</strong> ${escapeHtml(listing.category || 'N/A')}</p>
+          <p><strong>Make:</strong> ${escapeHtml(listing.make || 'N/A')}</p>
+          <p><strong>Model:</strong> ${escapeHtml(listing.model || 'N/A')}</p>
+          <p><strong>Year:</strong> ${escapeHtml(listing.year || 'N/A')}</p>
+          <p><strong>Mileage:</strong> ${listing.mileage ? escapeHtml(listing.mileage) + ' km' : 'N/A'}</p>
+          <p><strong>Country:</strong> ${escapeHtml(listing.country || 'N/A')}</p>
+          <p><strong>Region:</strong> ${escapeHtml(listing.region || 'N/A')}</p>
+          <p><strong>Phone:</strong> ${escapeHtml(listing.phoneNumber || 'N/A')}</p>
+          <p><strong>Description:</strong> ${escapeHtml(listing.description || 'No description')}</p>
         `;
 
         if (listing.images && listing.images.length > 0) {
-          let imagesHtml = '<div class="listing-images">';
-          listing.images.forEach(img => {
-            imagesHtml += `<img src="${img}" alt="Vehicle image">`;
+          const imagesWrap = document.createElement('div');
+          imagesWrap.classList.add('listing-images');
+          listing.images.forEach(imgSrc => {
+            if (isSafeImageSrc(imgSrc)) {
+              const imgEl = document.createElement('img');
+              imgEl.src = imgSrc;
+              imgEl.alt = 'Vehicle image';
+              imagesWrap.appendChild(imgEl);
+            }
           });
-          imagesHtml += '</div>';
-          item.innerHTML += imagesHtml;
+          if (imagesWrap.childNodes.length > 0) {
+            item.appendChild(imagesWrap);
+          }
         }
 
         if (currentUser && listing.sellerUid === currentUser.uid) {
@@ -888,7 +923,7 @@ function applyFilters() {
   'Content-Type': 'application/json',
   'Authorization': `Bearer ${piToken}`
 },
-                body: JSON.stringify({ listingId: listing._id, piUid: currentUser.uid })
+                body: JSON.stringify({ listingId: listing._id })
               });
               if (delRes.ok) {
                 alert("Listing deleted!");
@@ -951,15 +986,3 @@ document.getElementById('logout-btn').onclick = () => {
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
