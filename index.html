@@ -580,27 +580,12 @@ let allListings = [];
       el.style.color = isError ? '#f44336' : '#2e7d32';
     }
 
-    // === CLOUDINARY: رفع الصور مباشرة من المتصفح إلى Cloudinary ===
-    // يستبدل التحويل القديم إلى base64 (الذي كان يعلّق الصفحة بدون أي خطأ إذا فشلت
-    // قراءة أي صورة). الآن: كل صورة تُرفع مباشرة، ونحصل على رابط قصير وآمن (secure_url)
-    // يُخزَّن في MongoDB بدل الصورة نفسها.
+    // === CLOUDINARY: رفع الصور عبر سيرفرنا بدل الاتصال المباشر بـ Cloudinary ===
+    // الاتصال المباشر من المتصفح بـ api.cloudinary.com قد يُحجب داخل Pi Browser
+    // (WebView مقيّد أمنياً) ويظهر كخطأ "Failed to fetch" بدون أي تفصيل. الحل:
+    // كل صورة تُرسل إلى دومين سيرفرنا (الموثوق به مسبقاً)، وهو من يرفعها لـ Cloudinary.
     async function uploadImagesToCloudinary(files) {
       if (!files || files.length === 0) return [];
-
-      // نطلب توقيع رفع آمن من السيرفر (صالح لمدة قصيرة، مرتبط بالمستخدم المصادق فقط)
-      const sigRes = await fetch(`${BACKEND_URL}/api/cloudinary-signature`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${piToken}`
-        },
-        body: JSON.stringify({})
-      });
-      if (!sigRes.ok) {
-        const err = await sigRes.json().catch(() => ({}));
-        throw new Error(err.error || 'Failed to prepare image upload');
-      }
-      const sig = await sigRes.json();
 
       const uploadedUrls = [];
       let index = 0;
@@ -609,23 +594,27 @@ let allListings = [];
         showMessage('listingMsg', `Uploading image ${index} of ${files.length}...`, false);
 
         const formData = new FormData();
-        formData.append('file', file);
-        formData.append('api_key', sig.apiKey);
-        formData.append('timestamp', sig.timestamp);
-        formData.append('signature', sig.signature);
-        formData.append('folder', sig.folder);
+        formData.append('image', file);
 
-        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`, {
-          method: 'POST',
-          body: formData
-        });
-
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok || !uploadData.secure_url) {
-          throw new Error(`Failed to upload image ${index}: ${(uploadData.error && uploadData.error.message) || 'Unknown error'}`);
+        let uploadRes;
+        try {
+          uploadRes = await fetch(`${BACKEND_URL}/api/upload-image`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${piToken}`
+            },
+            body: formData
+          });
+        } catch (networkErr) {
+          throw new Error(`Network error while uploading image ${index}. Please check your connection and try again.`);
         }
 
-        uploadedUrls.push(uploadData.secure_url);
+        const uploadData = await uploadRes.json().catch(() => ({}));
+        if (!uploadRes.ok || !uploadData.url) {
+          throw new Error(`Failed to upload image ${index}: ${uploadData.error || 'Unknown error'}`);
+        }
+
+        uploadedUrls.push(uploadData.url);
       }
 
       return uploadedUrls;
