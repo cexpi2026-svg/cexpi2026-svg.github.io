@@ -336,6 +336,9 @@
       100%{ background-position:200% 0; }
     }
 
+    #imageUploadStatus{ color:var(--text-1); }
+    #imageUploadStatus:empty{ display:none; }
+
     .checkbox-row{ display:flex; align-items:flex-start; gap:8px; margin-top:15px; }
     .checkbox-row input[type="checkbox"]{
       width:auto; margin:2px 0 0; accent-color:var(--violet); flex-shrink:0;
@@ -672,6 +675,7 @@
           <div class="upload-progress-wrap hidden" id="uploadProgressWrap">
             <div class="upload-progress-bar" id="uploadProgressBar"></div>
           </div>
+          <p id="imageUploadStatus" style="margin:6px 0 0; font-size:13px; font-weight:600;"></p>
 
           <div class="checkbox-row">
             <input type="checkbox" id="termsCheckbox" required>
@@ -724,6 +728,13 @@ Pi.init({ version: "2.0", sandbox: false });
 
 let currentUser = null;
 let allListings = [];
+let currentUploadedImages = []; // روابط Cloudinary الجاهزة بعد رفع الصور المختارة حالياً
+let isUploadingImages = false;  // true أثناء رفع الصور في الخلفية بعد اختيارها مباشرة
+
+// "تسخين" السيرفر مبكراً عند فتح الصفحة: خدمات Render المجانية "تنام" بعد فترة خمول
+// وأول طلب لها قد يفشل أو يبطئ (Failed to fetch). هذا الطلب الصامت يزيد فرصة أن يكون
+// السيرفر جاهزاً فعلاً وقت اختيار المستخدم للصور أو تسجيل الدخول.
+fetch(BACKEND_URL).catch(() => {});
 
     // ================= SECURITY HELPERS =================
     // يمنع XSS المخزّن: أي نص قادم من إعلانات مستخدمين آخرين يُعرض دائماً بعد تنقيته
@@ -808,6 +819,61 @@ let allListings = [];
     // الاتصال المباشر من المتصفح بـ api.cloudinary.com قد يُحجب داخل Pi Browser
     // (WebView مقيّد أمنياً) ويظهر كخطأ "Failed to fetch" بدون أي تفصيل. الحل:
     // كل صورة تُرسل إلى دومين سيرفرنا (الموثوق به مسبقاً)، وهو من يرفعها لـ Cloudinary.
+    function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+    // يحاول رفع صورة واحدة، ويعيد المحاولة تلقائياً عند فشل الشبكة (مثال شائع: سيرفر Render
+    // كان "نائماً" ويحتاج بضع ثوانٍ ليستيقظ عند أول طلب) قبل أن يُبلغ عن خطأ نهائي
+    async function uploadSingleImageWithRetry(file, index, total, maxAttempts) {
+      let lastError = null;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        if (attempt === 1) {
+          showMessage('listingMsg', `Uploading image ${index} of ${total}...`, false);
+        } else {
+          showMessage('listingMsg', `Retrying image ${index} of ${total} (attempt ${attempt} of ${maxAttempts})...`, false);
+        }
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+          const uploadRes = await fetch(`${BACKEND_URL}/api/upload-image`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${piToken}`
+            },
+            body: formData
+          });
+
+          const uploadData = await uploadRes.json().catch(() => ({}));
+          if (!uploadRes.ok || !uploadData.url) {
+            lastError = new Error(`Failed to upload image ${index}: ${uploadData.error || 'Unknown error'}`);
+            // خطأ من السيرفر نفسه (وليس خطأ شبكة) لا داعي لإعادة المحاولة عليه
+            throw lastError;
+          }
+
+          return uploadData.url;
+        } catch (err) {
+          lastError = err;
+          const isNetworkError = (err instanceof TypeError) || /network|fetch/i.test(err.message || '');
+          const hasAttemptsLeft = attempt < maxAttempts;
+          if (isNetworkError && hasAttemptsLeft) {
+            // انتظار قصير قبل إعادة المحاولة (يعطي مهلة لاستيقاظ السيرفر عند سبات Render المجاني)
+            await delay(2000);
+            continue;
+          }
+          if (isNetworkError) {
+            throw new Error(`Network error while uploading image ${index}. Please check your connection and try again.`);
+          }
+          throw err;
+        }
+      }
+      throw lastError;
+    }
+
+    // === CLOUDINARY: رفع الصور عبر سيرفرنا بدل الاتصال المباشر بـ Cloudinary ===
+    // الاتصال المباشر من المتصفح بـ api.cloudinary.com قد يُحجب داخل Pi Browser
+    // (WebView مقيّد أمنياً) ويظهر كخطأ "Failed to fetch" بدون أي تفصيل. الحل:
+    // كل صورة تُرسل إلى دومين سيرفرنا (الموثوق به مسبقاً)، وهو من يرفعها لـ Cloudinary.
     async function uploadImagesToCloudinary(files) {
       if (!files || files.length === 0) return [];
 
@@ -818,39 +884,18 @@ let allListings = [];
 
       const uploadedUrls = [];
       let index = 0;
-      for (const file of files) {
-        index++;
-        showMessage('listingMsg', `Uploading image ${index} of ${files.length}...`, false);
-        progressBar.style.width = Math.round(((index - 1) / files.length) * 100) + '%';
-
-        const formData = new FormData();
-        formData.append('image', file);
-
-        let uploadRes;
-        try {
-          uploadRes = await fetch(`${BACKEND_URL}/api/upload-image`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${piToken}`
-            },
-            body: formData
-          });
-        } catch (networkErr) {
-          progressWrap.classList.add('hidden');
-          throw new Error(`Network error while uploading image ${index}. Please check your connection and try again.`);
+      try {
+        for (const file of files) {
+          index++;
+          progressBar.style.width = Math.round(((index - 1) / files.length) * 100) + '%';
+          const url = await uploadSingleImageWithRetry(file, index, files.length, 3);
+          uploadedUrls.push(url);
+          progressBar.style.width = Math.round((index / files.length) * 100) + '%';
         }
-
-        const uploadData = await uploadRes.json().catch(() => ({}));
-        if (!uploadRes.ok || !uploadData.url) {
-          progressWrap.classList.add('hidden');
-          throw new Error(`Failed to upload image ${index}: ${uploadData.error || 'Unknown error'}`);
-        }
-
-        uploadedUrls.push(uploadData.url);
-        progressBar.style.width = Math.round((index / files.length) * 100) + '%';
+      } finally {
+        progressWrap.classList.add('hidden');
       }
 
-      progressWrap.classList.add('hidden');
       return uploadedUrls;
     }
 
@@ -966,9 +1011,52 @@ document.getElementById('claim-promo-btn').onclick = async () => {
 
     
 
+    function setImageUploadStatus(message, kind) {
+      // kind: 'info' | 'success' | 'error'
+      const el = document.getElementById('imageUploadStatus');
+      el.textContent = message || '';
+      el.style.color = kind === 'error' ? '#FF5D7A' : kind === 'success' ? '#25E0A6' : 'var(--text-1)';
+    }
+
+    // يبدأ رفع الصور المختارة إلى Cloudinary فوراً (بدل الانتظار لحين الضغط على Publish)،
+    // ويُقفل زر Publish طوال مدة الرفع، مع رسالة واضحة تطلب من المستخدم الانتظار
+    async function handleImagesSelected(files) {
+      const submitBtn = document.getElementById('submit-listing-btn');
+      currentUploadedImages = [];
+
+      if (!files || files.length === 0) {
+        setImageUploadStatus('', 'info');
+        submitBtn.disabled = false;
+        return;
+      }
+
+      isUploadingImages = true;
+      submitBtn.disabled = true;
+      const originalBtnText = submitBtn.textContent;
+      submitBtn.textContent = 'Uploading images...';
+      setImageUploadStatus('⏳ Please wait, uploading images... you can publish once this finishes.', 'info');
+
+      try {
+        const urls = await uploadImagesToCloudinary(Array.from(files));
+        currentUploadedImages = urls;
+        setImageUploadStatus(`✅ ${urls.length} image(s) uploaded and ready to publish.`, 'success');
+      } catch (err) {
+        console.error(err);
+        currentUploadedImages = [];
+        setImageUploadStatus('❌ ' + err.message + ' You can try reselecting the images, or publish without them.', 'error');
+        await customAlert(err.message, true);
+      } finally {
+        isUploadingImages = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+      }
+    }
+
     document.getElementById('images').onchange = (e) => {
       const preview = document.getElementById('preview');
       preview.innerHTML = '';
+      currentUploadedImages = [];
+      setImageUploadStatus('', 'info');
       const files = e.target.files;
       if (files.length > 6) {
         customAlert("Maximum 6 images allowed", true);
@@ -987,6 +1075,7 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         img.src = URL.createObjectURL(file);
         preview.appendChild(img);
       }
+      handleImagesSelected(e.target.files);
     };
 
     document.getElementById('add-listing-btn').onclick = async () => {
@@ -1101,12 +1190,20 @@ document.getElementById('claim-promo-btn').onclick = async () => {
 
       const submitBtn = document.getElementById('submit-listing-btn');
       const imagesInput = document.getElementById('images');
-      // قفل زر النشر وحقل الصور فوراً لمنع الضغط المزدوج أو تغيير الصور أثناء الرفع/النشر
+
+      // الصور تُرفع مسبقاً فور اختيارها (انظر handleImagesSelected)، لذا إن كانت لا تزال
+      // قيد الرفع نمنع النشر ونطلب من المستخدم الانتظار بدل محاولة رفعها من جديد هنا
+      if (isUploadingImages) {
+        showMessage('listingMsg', 'Please wait for the images to finish uploading before publishing.', true);
+        return;
+      }
+
+      // قفل زر النشر وحقل الصور فوراً لمنع الضغط المزدوج أو تغيير الصور أثناء النشر
       if (submitBtn.disabled) return;
       submitBtn.disabled = true;
       imagesInput.disabled = true;
       const originalBtnText = submitBtn.textContent;
-      submitBtn.textContent = 'Uploading images...';
+      submitBtn.textContent = 'Publishing...';
 
       try {
         const title = document.getElementById('title').value.trim();
@@ -1132,10 +1229,9 @@ document.getElementById('claim-promo-btn').onclick = async () => {
           return;
         }
 
-        // === CLOUDINARY: رفع الصور مباشرة بدل تحويلها إلى base64 ===
-        const images = await uploadImagesToCloudinary(Array.from(imageFiles));
+        // === CLOUDINARY: الصور مرفوعة مسبقاً (تم رفعها فور اختيارها)، نستخدم روابطها الجاهزة مباشرة ===
+        const images = currentUploadedImages;
 
-        submitBtn.textContent = 'Publishing...';
         showMessage('listingMsg', 'Publishing your listing...', false);
 
         const res = await fetch(`${BACKEND_URL}/api/complete-listing`, {
@@ -1170,6 +1266,10 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         await customAlert("Listing published successfully!", false);
         document.getElementById('listing-form').classList.add('hidden');
         document.getElementById('add-listing-btn').classList.remove('hidden');
+        // إعادة تصفير حالة الصور حتى لا تُستخدم روابط هذا الإعلان بالخطأ في إعلان قادم
+        currentUploadedImages = [];
+        document.getElementById('preview').innerHTML = '';
+        setImageUploadStatus('', 'info');
         loadListings();
       } catch (err) {
         console.error(err);
