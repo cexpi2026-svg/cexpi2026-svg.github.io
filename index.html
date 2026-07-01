@@ -81,6 +81,9 @@
       background:radial-gradient(circle at 30% 20%, rgba(255,255,255,0.35), transparent 55%);
     }
     .app-logo svg{ width:44px; height:44px; position:relative; z-index:1; }
+    .app-logo img{
+      width:100%; height:100%; object-fit:cover; position:relative; z-index:1;
+    }
 
     .brand-title{
       display:flex; align-items:center; justify-content:center; gap:10px;
@@ -299,6 +302,24 @@
     .listing-images img{
       width:100%; max-width:130px; height:100px; object-fit:cover;
       border-radius:var(--radius-sm); border:1px solid var(--border);
+      cursor:pointer;
+      transition:transform .15s ease, border-color .15s ease;
+    }
+    .listing-images img:hover{
+      transform:scale(1.03);
+      border-color:var(--border-strong);
+    }
+    .listing-images .more-badge{
+      position:relative;
+    }
+    .listing-images .more-badge::after{
+      content:attr(data-more);
+      position:absolute; inset:0;
+      background:rgba(6,6,14,0.62);
+      color:#fff; font-weight:700; font-size:15px;
+      display:flex; align-items:center; justify-content:center;
+      border-radius:var(--radius-sm);
+      pointer-events:none;
     }
 
     .search-container{
@@ -314,6 +335,10 @@
     .search-input:focus{
       outline:none; border-color:var(--border-strong);
       box-shadow:0 0 0 3px rgba(139,107,255,0.18);
+    }
+    select.search-input{
+      max-width:220px;
+      cursor:pointer;
     }
 
     #promo-section{
@@ -429,9 +454,70 @@
     .modal-actions{ display:flex; gap:10px; margin-top:20px; }
     .modal-actions button{ margin:0; flex:1; }
 
+    /* ===== Image Gallery Lightbox ===== */
+    .gallery-overlay{
+      position:fixed; inset:0; z-index:1100;
+      background:rgba(4,4,10,0.9);
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      display:flex; align-items:center; justify-content:center;
+      padding:16px;
+      animation:overlay-in .18s ease;
+    }
+    .gallery-box{
+      width:100%; max-width:720px;
+      display:flex; flex-direction:column; align-items:center;
+      animation:modal-in .22s cubic-bezier(.2,.9,.25,1.1);
+    }
+    .gallery-main-wrap{
+      position:relative; width:100%;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border);
+      border-radius:var(--radius-lg);
+      overflow:hidden;
+      min-height:260px;
+    }
+    .gallery-main-wrap img{
+      width:100%; max-height:70vh; object-fit:contain; display:block;
+    }
+    .gallery-close{
+      position:absolute; top:10px; right:10px;
+      width:38px; height:38px; border-radius:50%;
+      background:rgba(6,6,14,0.7); border:1px solid var(--border);
+      color:#fff; font-size:20px; line-height:1;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; margin:0; padding:0;
+    }
+    .gallery-nav{
+      position:absolute; top:50%; transform:translateY(-50%);
+      width:42px; height:42px; border-radius:50%;
+      background:rgba(6,6,14,0.55); border:1px solid var(--border);
+      color:#fff; font-size:20px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; margin:0; padding:0;
+    }
+    .gallery-nav.prev{ left:10px; }
+    .gallery-nav.next{ right:10px; }
+    .gallery-counter{
+      color:var(--text-1); font-size:13px; margin-top:10px; font-weight:600;
+    }
+    .gallery-thumbs{
+      display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; justify-content:center;
+    }
+    .gallery-thumbs img{
+      width:56px; height:56px; object-fit:cover; border-radius:8px;
+      border:2px solid transparent; cursor:pointer; opacity:0.6;
+      transition:opacity .15s ease, border-color .15s ease;
+    }
+    .gallery-thumbs img.active{
+      opacity:1; border-color:var(--violet);
+    }
+
     @media (max-width:480px){
       h1{ font-size:26px; }
       .card{ padding:20px; }
+      .search-container{ flex-direction:column; align-items:stretch; }
+      .search-input, select.search-input{ max-width:100%; }
     }
   </style>
 </head>
@@ -439,19 +525,12 @@
   <div class="card">
     <div class="app-logo-wrap">
       <div class="app-logo" aria-hidden="true">
-        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M8 40c0-2.2 1.8-4 4-4h32c2.2 0 4 1.8 4 4v6a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-6Z" fill="#fff"/>
-          <path d="M12 36l4-9a3 3 0 0 1 2.8-1.9h14.4A3 3 0 0 1 36 27l4 9H12Z" fill="#fff" fill-opacity="0.85"/>
-          <circle cx="18" cy="48" r="4.5" fill="#171730"/>
-          <circle cx="18" cy="48" r="2" fill="#fff"/>
-          <circle cx="38" cy="48" r="4.5" fill="#171730"/>
-          <circle cx="38" cy="48" r="2" fill="#fff"/>
-        </svg>
+        <img src="logo.png" alt="CexPi logo">
       </div>
     </div>
     <h1>
       <span class="brand-title">
-        <span class="brand-icon">🚗</span><span class="brand-icon">🚚</span>CexPi<span class="brand-icon">🏍️</span>
+        CexPi
       </span>
     </h1>
     <p class="tagline">Used Cars, Trucks &amp; Motorcycles Ads Platform</p>
@@ -769,6 +848,14 @@
       <option value="">🌍 All Countries</option>
     </select>
 
+    <!-- فلتر نوع المنتج -->
+    <select id="categoryFilter" class="search-input">
+      <option value="">🚘 All Types</option>
+      <option value="car">🚗 Cars</option>
+      <option value="truck">🚚 Trucks</option>
+      <option value="motorcycle">🏍️ Motorcycles</option>
+    </select>
+
     <!-- البحث -->
     <input type="text" id="searchInput" class="search-input"
            placeholder="Search by title, make, model, region or country...">
@@ -787,6 +874,19 @@
       <div class="modal-icon" id="modalIcon">✅</div>
       <div class="modal-message" id="modalMessage"></div>
       <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <div class="gallery-overlay hidden" id="galleryOverlay">
+    <div class="gallery-box">
+      <div class="gallery-main-wrap">
+        <button type="button" class="gallery-close" id="galleryClose">&times;</button>
+        <button type="button" class="gallery-nav prev" id="galleryPrev">&#8249;</button>
+        <img id="galleryMainImg" src="" alt="Vehicle image">
+        <button type="button" class="gallery-nav next" id="galleryNext">&#8250;</button>
+      </div>
+      <div class="gallery-counter" id="galleryCounter"></div>
+      <div class="gallery-thumbs" id="galleryThumbs"></div>
     </div>
   </div>
 
@@ -885,6 +985,64 @@ fetch(BACKEND_URL).catch(() => {});
         confirmBtn.focus();
       });
     }
+
+    // ================= IMAGE GALLERY LIGHTBOX =================
+    // عرض احترافي للصور: الضغط على أي صورة في الإعلان يفتح معرضاً كبيراً
+    // يمكن من خلاله التنقل بين كل صور نفس الإعلان صورة صورة (سابق/تالي + مصغرات)
+    let galleryImages = [];
+    let galleryIndex = 0;
+
+    function openGallery(images, startIndex) {
+      galleryImages = images;
+      galleryIndex = startIndex || 0;
+      renderGallery();
+      document.getElementById('galleryOverlay').classList.remove('hidden');
+    }
+
+    function closeGallery() {
+      document.getElementById('galleryOverlay').classList.add('hidden');
+    }
+
+    function renderGallery() {
+      if (!galleryImages.length) return;
+      if (galleryIndex < 0) galleryIndex = galleryImages.length - 1;
+      if (galleryIndex >= galleryImages.length) galleryIndex = 0;
+
+      document.getElementById('galleryMainImg').src = galleryImages[galleryIndex];
+      document.getElementById('galleryCounter').textContent =
+        (galleryIndex + 1) + ' / ' + galleryImages.length;
+
+      const thumbsWrap = document.getElementById('galleryThumbs');
+      thumbsWrap.innerHTML = '';
+      if (galleryImages.length > 1) {
+        galleryImages.forEach((src, i) => {
+          const t = document.createElement('img');
+          t.src = src;
+          t.alt = 'Thumbnail';
+          if (i === galleryIndex) t.classList.add('active');
+          t.onclick = () => { galleryIndex = i; renderGallery(); };
+          thumbsWrap.appendChild(t);
+        });
+      }
+
+      const showNav = galleryImages.length > 1;
+      document.getElementById('galleryPrev').style.display = showNav ? 'flex' : 'none';
+      document.getElementById('galleryNext').style.display = showNav ? 'flex' : 'none';
+    }
+
+    document.getElementById('galleryClose').onclick = closeGallery;
+    document.getElementById('galleryPrev').onclick = () => { galleryIndex--; renderGallery(); };
+    document.getElementById('galleryNext').onclick = () => { galleryIndex++; renderGallery(); };
+    document.getElementById('galleryOverlay').addEventListener('click', (e) => {
+      if (e.target.id === 'galleryOverlay') closeGallery();
+    });
+    document.addEventListener('keydown', (e) => {
+      const overlay = document.getElementById('galleryOverlay');
+      if (overlay.classList.contains('hidden')) return;
+      if (e.key === 'Escape') closeGallery();
+      if (e.key === 'ArrowLeft') { galleryIndex--; renderGallery(); }
+      if (e.key === 'ArrowRight') { galleryIndex++; renderGallery(); }
+    });
 
     // === CLOUDINARY: رفع الصور عبر سيرفرنا بدل الاتصال المباشر بـ Cloudinary ===
     // الاتصال المباشر من المتصفح بـ api.cloudinary.com قد يُحجب داخل Pi Browser
@@ -1381,6 +1539,7 @@ applyFilters();
 function applyFilters() {
   const searchTerm = document.getElementById('searchInput').value.toLowerCase();
   const selectedCountry = document.getElementById('countryFilter').value;
+  const selectedCategory = document.getElementById('categoryFilter').value;
 
   const filtered = allListings.filter(listing => {
 
@@ -1396,7 +1555,11 @@ function applyFilters() {
     const matchesCountry =
       !selectedCountry || listing.country === selectedCountry;
 
-    return matchesSearch && matchesCountry;
+    // فلتر نوع المنتج (سيارات / شاحنات / دراجات)
+    const matchesCategory =
+      !selectedCategory || listing.category === selectedCategory;
+
+    return matchesSearch && matchesCountry && matchesCategory;
   });
 
   displayListings(filtered);
@@ -1434,17 +1597,28 @@ function applyFilters() {
         `;
 
         if (listing.images && listing.images.length > 0) {
-          const imagesWrap = document.createElement('div');
-          imagesWrap.classList.add('listing-images');
-          listing.images.forEach(imgSrc => {
-            if (isSafeImageSrc(imgSrc)) {
+          // نجهّز قائمة الصور الآمنة فقط، وتُستخدم لاحقاً لفتح المعرض الاحترافي
+          const safeImages = listing.images.filter(isSafeImageSrc);
+
+          if (safeImages.length > 0) {
+            const imagesWrap = document.createElement('div');
+            imagesWrap.classList.add('listing-images');
+
+            // نعرض حتى 4 صور كمعاينة داخل البطاقة، والضغط على أي واحدة يفتح المعرض الكامل
+            const MAX_PREVIEW = 4;
+            safeImages.slice(0, MAX_PREVIEW).forEach((imgSrc, i) => {
               const imgEl = document.createElement('img');
               imgEl.src = imgSrc;
               imgEl.alt = 'Vehicle image';
+              const remaining = safeImages.length - MAX_PREVIEW;
+              if (i === MAX_PREVIEW - 1 && remaining > 0) {
+                imgEl.classList.add('more-badge');
+                imgEl.setAttribute('data-more', '+' + remaining);
+              }
+              imgEl.onclick = () => openGallery(safeImages, i);
               imagesWrap.appendChild(imgEl);
-            }
-          });
-          if (imagesWrap.childNodes.length > 0) {
+            });
+
             item.appendChild(imagesWrap);
           }
         }
@@ -1487,6 +1661,9 @@ function applyFilters() {
   .addEventListener('input', applyFilters);
 
 document.getElementById('countryFilter')
+  .addEventListener('change', applyFilters);
+
+document.getElementById('categoryFilter')
   .addEventListener('change', applyFilters);
 function populateCountryFilter() {
   const countrySelect = document.getElementById('country');
