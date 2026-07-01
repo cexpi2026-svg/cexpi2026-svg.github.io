@@ -5,68 +5,427 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CexPi - Used Vehicles Marketplace</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
-    h1 { color: #6B4CE6; text-align: center; }
-    .card { background: white; padding: 25px; margin: 20px auto; max-width: 600px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    button { padding: 12px 24px; font-size: 16px; margin: 10px 0; cursor: pointer; border: none; border-radius: 8px; }
-    .btn-primary { background: #6B4CE6; color: white; width: 100%; }
-    .btn-primary:hover { background: #5a3fd6; }
-    .btn-delete { background: #f44336; color: white; padding: 8px 16px; margin-top: 10px; }
-    .btn-delete:hover { background: #d32f2f; }
-    .hidden { display: none; }
-    input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-    label { display: block; margin-top: 15px; font-weight: bold; }
-    #status { text-align: center; font-size: 18px; margin: 20px 0; }
-    .images-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-    .images-preview img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
-    #listings-section { margin-top: 40px; }
-    .listing-item { background: white; padding: 20px; margin: 15px 0; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-    .listing-item h3 { margin: 0 0 10px 0; color: #6B4CE6; }
-    .listing-item p { margin: 5px 0; color: #555; }
-    .listing-images { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-    .listing-images img { width: 150px; height: auto; border-radius: 8px; }
-    .search-container { margin: 20px 0; text-align: center; }
-    .search-input { padding: 12px; font-size: 16px; width: 80%; max-width: 400px; border-radius: 8px; border: 1px solid #ccc; }
+    :root{
+      --bg-0:#0A0A14;
+      --bg-1:#101120;
+      --surface:rgba(255,255,255,0.045);
+      --surface-2:rgba(255,255,255,0.07);
+      --border:rgba(255,255,255,0.09);
+      --border-strong:rgba(154,124,255,0.35);
+      --violet:#8B6BFF;
+      --violet-2:#6B4CE6;
+      --violet-glow:rgba(139,107,255,0.45);
+      --mint:#25E0A6;
+      --mint-glow:rgba(37,224,166,0.35);
+      --amber:#FFB020;
+      --coral:#FF5D7A;
+      --coral-2:#E63B5C;
+      --text-0:#F3F1FF;
+      --text-1:#B9B4D6;
+      --text-2:#7B7699;
+      --radius-lg:20px;
+      --radius-md:14px;
+      --radius-sm:10px;
+      --font-display:'Space Grotesk', system-ui, sans-serif;
+      --font-body:'Inter', system-ui, sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      font-family:var(--font-body);
+      margin:0;
+      padding:24px 16px 60px;
+      color:var(--text-0);
+      background:
+        radial-gradient(ellipse 900px 600px at 12% -10%, rgba(139,107,255,0.20), transparent 60%),
+        radial-gradient(ellipse 700px 500px at 100% 0%, rgba(37,224,166,0.14), transparent 55%),
+        radial-gradient(ellipse 900px 700px at 50% 110%, rgba(107,76,230,0.16), transparent 60%),
+        var(--bg-0);
+      background-attachment:fixed;
+      min-height:100vh;
+    }
+
+    ::selection{ background:var(--violet-glow); color:#fff; }
+
+    h1,h2,h3{ font-family:var(--font-display); letter-spacing:-0.01em; }
+
+    h1{
+      color:var(--text-0);
+      text-align:center;
+      font-size:32px;
+      margin:4px 0 2px;
+      background:linear-gradient(135deg,#C9BBFF 0%, #8B6BFF 55%, #25E0A6 100%);
+      -webkit-background-clip:text;
+      background-clip:text;
+      -webkit-text-fill-color:transparent;
+    }
+
+    .tagline{ text-align:center; color:var(--text-1); margin:0 0 4px; font-size:14.5px; }
+
+    .fee-pill-row{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin:14px 0 6px; }
+    .fee-pill{
+      display:inline-flex; align-items:center; gap:6px;
+      background:var(--surface); border:1px solid var(--border);
+      color:var(--text-1); font-size:12.5px; padding:6px 12px; border-radius:999px;
+    }
+    .fee-pill.accent{ border-color:var(--border-strong); color:var(--text-0); }
+    .fee-pill .dot{ width:6px; height:6px; border-radius:50%; background:var(--mint); box-shadow:0 0 8px var(--mint-glow); }
+
+    .card{
+      background:linear-gradient(180deg, var(--surface), rgba(255,255,255,0.02));
+      backdrop-filter:blur(22px);
+      -webkit-backdrop-filter:blur(22px);
+      padding:26px;
+      margin:20px auto;
+      max-width:600px;
+      border-radius:var(--radius-lg);
+      border:1px solid var(--border);
+      box-shadow:0 20px 60px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+      position:relative;
+    }
+
+    button{
+      padding:13px 24px;
+      font-size:15px;
+      font-family:var(--font-body);
+      font-weight:600;
+      margin:10px 0;
+      cursor:pointer;
+      border:none;
+      border-radius:var(--radius-md);
+      transition:transform .15s ease, box-shadow .2s ease, opacity .2s ease, filter .2s ease;
+      position:relative;
+      letter-spacing:0.01em;
+    }
+    button:active{ transform:translateY(1px) scale(0.99); }
+
+    .btn-primary{
+      background:linear-gradient(135deg, var(--violet) 0%, var(--violet-2) 100%);
+      color:#fff;
+      width:100%;
+      box-shadow:0 8px 24px -8px var(--violet-glow), inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+    .btn-primary:hover:not(:disabled){
+      filter:brightness(1.08);
+      box-shadow:0 10px 32px -6px var(--violet-glow), inset 0 1px 0 rgba(255,255,255,0.3);
+      transform:translateY(-1px);
+    }
+
+    .btn-secondary{
+      background:var(--surface-2);
+      color:var(--text-0);
+      border:1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled){ background:rgba(255,255,255,0.11); }
+
+    .btn-delete{
+      background:linear-gradient(135deg, var(--coral) 0%, var(--coral-2) 100%);
+      color:#fff;
+      padding:9px 18px;
+      margin-top:10px;
+      box-shadow:0 6px 18px -6px rgba(230,59,92,0.5);
+    }
+    .btn-delete:hover:not(:disabled){ filter:brightness(1.08); }
+
+    button:disabled{
+      opacity:0.55;
+      cursor:not-allowed;
+      filter:grayscale(0.15);
+      box-shadow:none;
+      transform:none;
+    }
+
+    .btn-loading{ color:transparent !important; pointer-events:none; }
+    .btn-loading::after{
+      content:"";
+      position:absolute;
+      left:50%; top:50%;
+      width:18px; height:18px;
+      margin:-9px 0 0 -9px;
+      border-radius:50%;
+      border:2.5px solid rgba(255,255,255,0.35);
+      border-top-color:#fff;
+      animation:spin 0.7s linear infinite;
+    }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+
+    .hidden{ display:none !important; }
+
+    input, select, textarea{
+      width:100%;
+      padding:12px 14px;
+      margin:8px 0;
+      border:1px solid var(--border);
+      border-radius:var(--radius-sm);
+      box-sizing:border-box;
+      background:rgba(255,255,255,0.035);
+      color:var(--text-0);
+      font-family:var(--font-body);
+      font-size:14.5px;
+      transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    input::placeholder, textarea::placeholder{ color:var(--text-2); }
+    input:focus, select:focus, textarea:focus{
+      outline:none;
+      border-color:var(--border-strong);
+      background:rgba(255,255,255,0.06);
+      box-shadow:0 0 0 3px rgba(139,107,255,0.18);
+    }
+    select{ color-scheme:dark; }
+    select option{ background:#151529; color:var(--text-0); }
+
+    label{ display:block; margin-top:15px; font-weight:600; font-size:13.5px; color:var(--text-1); }
+    label a{ color:var(--violet); }
+
+    #status{
+      text-align:center;
+      font-size:15px;
+      margin:14px 0;
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:9px 16px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      width:100%;
+      justify-content:center;
+      color:var(--text-0);
+      font-weight:600;
+    }
+    #status:not(:empty)::before{
+      content:"";
+      width:8px; height:8px; border-radius:50%;
+      background:var(--mint);
+      box-shadow:0 0 10px var(--mint-glow);
+    }
+
+    .images-preview{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+    .images-preview img{
+      width:96px; height:96px; object-fit:cover; border-radius:var(--radius-sm);
+      border:1px solid var(--border); box-shadow:0 6px 16px -8px rgba(0,0,0,0.6);
+    }
+
+    #listings-section{ margin-top:40px; max-width:1100px; }
+
+    #listings-list{
+      display:grid;
+      grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
+      gap:18px;
+    }
+
+    .listing-item{
+      background:linear-gradient(180deg, var(--surface), rgba(255,255,255,0.015));
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+      padding:20px;
+      border-radius:var(--radius-lg);
+      border:1px solid var(--border);
+      box-shadow:0 14px 34px -18px rgba(0,0,0,0.6);
+      transition:border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+      position:relative;
+      overflow:hidden;
+    }
+    .listing-item::before{
+      content:"";
+      position:absolute; inset:0 0 auto 0; height:3px;
+      background:linear-gradient(90deg, var(--violet), var(--mint));
+      opacity:0.9;
+    }
+    .listing-item:hover{
+      border-color:var(--border-strong);
+      transform:translateY(-3px);
+      box-shadow:0 18px 40px -16px var(--violet-glow);
+    }
+    .listing-item h3{ margin:4px 0 10px 0; color:var(--text-0); font-size:19px; }
+    .listing-item p{ margin:5px 0; color:var(--text-1); font-size:13.5px; line-height:1.5; }
+    .listing-item p strong{ color:var(--text-0); font-weight:600; }
+
+    .price-chip{
+      display:inline-flex; align-items:center; gap:6px;
+      background:linear-gradient(135deg, rgba(139,107,255,0.22), rgba(37,224,166,0.16));
+      border:1px solid var(--border-strong);
+      color:var(--text-0);
+      font-weight:700;
+      font-family:var(--font-display);
+      padding:6px 12px;
+      border-radius:999px;
+      font-size:14.5px;
+      margin:2px 0 10px;
+    }
+    .category-chip{
+      display:inline-block;
+      background:var(--surface-2);
+      border:1px solid var(--border);
+      color:var(--text-1);
+      font-size:11.5px;
+      font-weight:600;
+      letter-spacing:0.03em;
+      text-transform:uppercase;
+      padding:4px 10px;
+      border-radius:999px;
+      margin-left:8px;
+    }
+
+    .listing-images{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .listing-images img{
+      width:100%; max-width:130px; height:100px; object-fit:cover;
+      border-radius:var(--radius-sm); border:1px solid var(--border);
+    }
+
+    .search-container{
+      margin:26px auto; text-align:center; max-width:900px;
+      display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
+    }
+    .search-input{
+      padding:12px 16px; font-size:14.5px; width:100%; max-width:360px;
+      border-radius:var(--radius-md); border:1px solid var(--border);
+      background:rgba(255,255,255,0.04); color:var(--text-0);
+      margin:0;
+    }
+    .search-input:focus{
+      outline:none; border-color:var(--border-strong);
+      box-shadow:0 0 0 3px rgba(139,107,255,0.18);
+    }
+
+    #promo-section{
+      background:linear-gradient(135deg, rgba(255,176,32,0.14), rgba(255,176,32,0.05)) !important;
+      border:1px solid rgba(255,176,32,0.35) !important;
+      border-radius:var(--radius-md) !important;
+      padding:16px !important;
+    }
+    #promo-status{ color:var(--text-0) !important; }
+    #claim-promo-btn{
+      background:linear-gradient(135deg, var(--amber), #FF8A3D) !important;
+      color:#1a1200 !important;
+      box-shadow:0 8px 22px -8px rgba(255,176,32,0.55) !important;
+      animation:promo-pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes promo-pulse{
+      0%,100%{ box-shadow:0 8px 22px -8px rgba(255,176,32,0.55); }
+      50%{ box-shadow:0 8px 30px -4px rgba(255,176,32,0.85); }
+    }
+
+    #paymentMsg, #listingMsg{ font-size:13.5px; }
+    #paymentMsg:not(:empty), #listingMsg:not(:empty){
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius-sm); padding:10px 12px; margin-top:10px !important;
+    }
+
+    .upload-progress-wrap{
+      width:100%; height:8px; border-radius:999px;
+      background:rgba(255,255,255,0.07);
+      overflow:hidden; margin:10px 0 4px;
+      border:1px solid var(--border);
+    }
+    .upload-progress-bar{
+      height:100%; width:0%;
+      background:linear-gradient(90deg, var(--violet), var(--mint));
+      background-size:200% 100%;
+      animation:shimmer 1.4s linear infinite;
+      transition:width .25s ease;
+      border-radius:999px;
+    }
+    @keyframes shimmer{
+      0%{ background-position:0% 0; }
+      100%{ background-position:200% 0; }
+    }
+
+    .checkbox-row{ display:flex; align-items:flex-start; gap:8px; margin-top:15px; }
+    .checkbox-row input[type="checkbox"]{
+      width:auto; margin:2px 0 0; accent-color:var(--violet); flex-shrink:0;
+    }
+    .checkbox-row label, label.checkbox-label{
+      display:inline; margin:0; font-weight:400; color:var(--text-1); font-size:13.5px;
+    }
+
+    .empty-state{
+      text-align:center; color:var(--text-1); padding:40px 20px;
+      background:var(--surface); border:1px dashed var(--border);
+      border-radius:var(--radius-md); grid-column:1/-1;
+    }
+
+    /* ===== Modal (replaces native alert/confirm) ===== */
+    .modal-overlay{
+      position:fixed; inset:0; z-index:1000;
+      background:rgba(6,6,14,0.68);
+      backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+      display:flex; align-items:center; justify-content:center;
+      padding:20px;
+      animation:overlay-in .18s ease;
+    }
+    @keyframes overlay-in{ from{ opacity:0; } to{ opacity:1; } }
+    .modal-box{
+      width:100%; max-width:380px;
+      background:linear-gradient(180deg, #17172c, #101020);
+      border:1px solid var(--border-strong);
+      border-radius:var(--radius-lg);
+      padding:26px 24px 22px;
+      box-shadow:0 30px 80px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03);
+      text-align:center;
+      animation:modal-in .22s cubic-bezier(.2,.9,.25,1.1);
+    }
+    @keyframes modal-in{
+      from{ opacity:0; transform:translateY(10px) scale(0.96); }
+      to{ opacity:1; transform:translateY(0) scale(1); }
+    }
+    .modal-icon{ font-size:34px; margin-bottom:10px; line-height:1; }
+    .modal-message{ color:var(--text-0); font-size:15px; line-height:1.55; white-space:pre-line; }
+    .modal-actions{ display:flex; gap:10px; margin-top:20px; }
+    .modal-actions button{ margin:0; flex:1; }
+
+    @media (max-width:480px){
+      h1{ font-size:26px; }
+      .card{ padding:20px; }
+    }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>🚗🚚CexPi🚴‍♂️</h1>
-    <p style="text-align:center;">Used Cars, Trucks & Motorcycles Ads Platform</p>
-    <p style="text-align:center;">Free access • Pay 0.5 Pi to publish one listing</p>
+    <p class="tagline">Used Cars, Trucks &amp; Motorcycles Ads Platform</p>
+    <div class="fee-pill-row">
+      <span class="fee-pill accent"><span class="dot"></span>Free access</span>
+      <span class="fee-pill">Pay 0.5 Pi to publish one listing</span>
+    </div>
 
     <div id="login-section">
-  
-  <label style="display:block; margin-bottom:15px; font-size:14px;">
-    <input type="checkbox" id="acceptPolicies">
-    I agree to the 
-    <a href="terms_of_service.html" target="_blank">Terms of Service</a> 
-    and 
-    <a href="privacy_policy.html" target="_blank">Privacy Policy</a>
-  </label>
 
-  <button id="login-btn" class="btn-primary">
-    Login with Pi Network
-  </button>
+      <div class="checkbox-row">
+        <input type="checkbox" id="acceptPolicies">
+        <label for="acceptPolicies" class="checkbox-label">
+          I agree to the
+          <a href="terms_of_service.html" target="_blank">Terms of Service</a>
+          and
+          <a href="privacy_policy.html" target="_blank">Privacy Policy</a>
+        </label>
+      </div>
 
-</div>
+      <button id="login-btn" class="btn-primary">
+        Login with Pi Network
+      </button>
+
+    </div>
 
 
     <div id="app-section" class="hidden">
       <div id="status"></div>
-      <button id="logout-btn" class="btn-delete" style="width:100%;">
-  Logout
-</button>
+      <button id="logout-btn" class="btn-secondary" style="width:100%;">
+        Logout
+      </button>
 
-      
       <div id="promo-section" style="background:#fff8e1; padding:15px; border-radius:10px; margin:15px 0; text-align:center; border:1px solid #ffd54f;">
-  <p id="promo-status" style="margin:0 0 10px 0; font-weight:bold;">Checking promo eligibility...</p>
-  <button id="claim-promo-btn" class="btn-primary" style="background:#ff9800; display:none;">
-    🎁 Claim 0.1 Pi (First 5 Users Only)
-  </button>
-</div>
-      
+        <p id="promo-status" style="margin:0 0 10px 0; font-weight:bold;">Checking promo eligibility...</p>
+        <button id="claim-promo-btn" class="btn-primary" style="background:#ff9800; display:none;">
+          🎁 Claim 0.1 Pi (First 5 Users Only)
+        </button>
+      </div>
+
       <button id="add-listing-btn" class="btn-primary">Add New Listing (Pay 0.5 Pi)</button>
       <div id="paymentMsg" style="margin-top:10px; font-weight:bold; text-align:center;"></div>
 
@@ -299,8 +658,7 @@
             <option value="Vietnam">Vietnam</option>
             <option value="Yemen">Yemen</option>
             <option value="Zambia">Zambia</option>
-            <option value="Zimbabwe">Zimbabwe</option>
-          </select>
+            <option value="Zimbabwe">Zimbabwe</option>          </select>
 
           <label>Region / City *</label>
           <input type="text" id="region" placeholder="e.g., Algiers, Oran, Constantine" required maxlength="150">
@@ -311,10 +669,16 @@
           <label>Images (up to 6 - optional, max 1MB each)</label>
           <input type="file" id="images" multiple accept="image/png,image/jpeg,image/gif,image/webp">
           <div class="images-preview" id="preview"></div>
-<label style="margin-top:15px;">
-  <input type="checkbox" id="termsCheckbox" required>
-  I confirm that I am solely responsible for the content of this listing. 
-</label>
+          <div class="upload-progress-wrap hidden" id="uploadProgressWrap">
+            <div class="upload-progress-bar" id="uploadProgressBar"></div>
+          </div>
+
+          <div class="checkbox-row">
+            <input type="checkbox" id="termsCheckbox" required>
+            <label for="termsCheckbox" class="checkbox-label">
+              I confirm that I am solely responsible for the content of this listing.
+            </label>
+          </div>
 
           <button type="button" id="submit-listing-btn" class="btn-primary">Publish Listing</button>
           <div id="listingMsg" style="margin-top:10px; font-weight:bold; text-align:center;"></div>
@@ -325,217 +689,29 @@
 
   <div class="search-container">
 
-  <!-- فلتر الدولة -->
-  <select id="countryFilter" class="search-input">
-    <option value="">🌍 All Countries</option>
-    <option value="">Select Country</option>
-            <option value="Afghanistan">Afghanistan</option>
-            <option value="Albania">Albania</option>
-            <option value="Algeria">Algeria</option>
-            <option value="Andorra">Andorra</option>
-            <option value="Angola">Angola</option>
-            <option value="Antigua and Barbuda">Antigua and Barbuda</option>
-            <option value="Argentina">Argentina</option>
-            <option value="Armenia">Armenia</option>
-            <option value="Australia">Australia</option>
-            <option value="Austria">Austria</option>
-            <option value="Azerbaijan">Azerbaijan</option>
-            <option value="Bahamas">Bahamas</option>
-            <option value="Bahrain">Bahrain</option>
-            <option value="Bangladesh">Bangladesh</option>
-            <option value="Barbados">Barbados</option>
-            <option value="Belarus">Belarus</option>
-            <option value="Belgium">Belgium</option>
-            <option value="Belize">Belize</option>
-            <option value="Benin">Benin</option>
-            <option value="Bhutan">Bhutan</option>
-            <option value="Bolivia">Bolivia</option>
-            <option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
-            <option value="Botswana">Botswana</option>
-            <option value="Brazil">Brazil</option>
-            <option value="Brunei">Brunei</option>
-            <option value="Bulgaria">Bulgaria</option>
-            <option value="Burkina Faso">Burkina Faso</option>
-            <option value="Burundi">Burundi</option>
-            <option value="Cabo Verde">Cabo Verde</option>
-            <option value="Cambodia">Cambodia</option>
-            <option value="Cameroon">Cameroon</option>
-            <option value="Canada">Canada</option>
-            <option value="Central African Republic">Central African Republic</option>
-            <option value="Chad">Chad</option>
-            <option value="Chile">Chile</option>
-            <option value="China">China</option>
-            <option value="Colombia">Colombia</option>
-            <option value="Comoros">Comoros</option>
-            <option value="Congo (Congo-Brazzaville)">Congo (Congo-Brazzaville)</option>
-            <option value="Costa Rica">Costa Rica</option>
-            <option value="Croatia">Croatia</option>
-            <option value="Cuba">Cuba</option>
-            <option value="Cyprus">Cyprus</option>
-            <option value="Czechia (Czech Republic)">Czechia (Czech Republic)</option>
-            <option value="Denmark">Denmark</option>
-            <option value="Djibouti">Djibouti</option>
-            <option value="Dominica">Dominica</option>
-            <option value="Dominican Republic">Dominican Republic</option>
-            <option value="Ecuador">Ecuador</option>
-            <option value="Egypt">Egypt</option>
-            <option value="El Salvador">El Salvador</option>
-            <option value="Equatorial Guinea">Equatorial Guinea</option>
-            <option value="Eritrea">Eritrea</option>
-            <option value="Estonia">Estonia</option>
-            <option value="Eswatini (Swaziland)">Eswatini (Swaziland)</option>
-            <option value="Ethiopia">Ethiopia</option>
-            <option value="Fiji">Fiji</option>
-            <option value="Finland">Finland</option>
-            <option value="France">France</option>
-            <option value="Gabon">Gabon</option>
-            <option value="Gambia">Gambia</option>
-            <option value="Georgia">Georgia</option>
-            <option value="Germany">Germany</option>
-            <option value="Ghana">Ghana</option>
-            <option value="Greece">Greece</option>
-            <option value="Grenada">Grenada</option>
-            <option value="Guatemala">Guatemala</option>
-            <option value="Guinea">Guinea</option>
-            <option value="Guinea-Bissau">Guinea-Bissau</option>
-            <option value="Guyana">Guyana</option>
-            <option value="Haiti">Haiti</option>
-            <option value="Honduras">Honduras</option>
-            <option value="Hungary">Hungary</option>
-            <option value="Iceland">Iceland</option>
-            <option value="India">India</option>
-            <option value="Indonesia">Indonesia</option>
-            <option value="Iran">Iran</option>
-            <option value="Iraq">Iraq</option>
-            <option value="Ireland">Ireland</option>
-            <option value="Israel">Israel</option>
-            <option value="Italy">Italy</option>
-            <option value="Jamaica">Jamaica</option>
-            <option value="Japan">Japan</option>
-            <option value="Jordan">Jordan</option>
-            <option value="Kazakhstan">Kazakhstan</option>
-            <option value="Kenya">Kenya</option>
-            <option value="Kiribati">Kiribati</option>
-            <option value="Kosovo">Kosovo</option>
-            <option value="Kuwait">Kuwait</option>
-            <option value="Kyrgyzstan">Kyrgyzstan</option>
-            <option value="Laos">Laos</option>
-            <option value="Latvia">Latvia</option>
-            <option value="Lebanon">Lebanon</option>
-            <option value="Lesotho">Lesotho</option>
-            <option value="Liberia">Liberia</option>
-            <option value="Libya">Libya</option>
-            <option value="Liechtenstein">Liechtenstein</option>
-            <option value="Lithuania">Lithuania</option>
-            <option value="Luxembourg">Luxembourg</option>
-            <option value="Madagascar">Madagascar</option>
-            <option value="Malawi">Malawi</option>
-            <option value="Malaysia">Malaysia</option>
-            <option value="Maldives">Maldives</option>
-            <option value="Mali">Mali</option>
-            <option value="Malta">Malta</option>
-            <option value="Marshall Islands">Marshall Islands</option>
-            <option value="Mauritania">Mauritania</option>
-            <option value="Mauritius">Mauritius</option>
-            <option value="Mexico">Mexico</option>
-            <option value="Micronesia">Micronesia</option>
-            <option value="Moldova">Moldova</option>
-            <option value="Monaco">Monaco</option>
-            <option value="Mongolia">Mongolia</option>
-            <option value="Montenegro">Montenegro</option>
-            <option value="Morocco">Morocco</option>
-            <option value="Mozambique">Mozambique</option>
-            <option value="Myanmar (Burma)">Myanmar (Burma)</option>
-            <option value="Namibia">Namibia</option>
-            <option value="Nauru">Nauru</option>
-            <option value="Nepal">Nepal</option>
-            <option value="Netherlands">Netherlands</option>
-            <option value="New Zealand">New Zealand</option>
-            <option value="Nicaragua">Nicaragua</option>
-            <option value="Niger">Niger</option>
-            <option value="Nigeria">Nigeria</option>
-            <option value="North Korea">North Korea</option>
-            <option value="North Macedonia">North Macedonia</option>
-            <option value="Norway">Norway</option>
-            <option value="Oman">Oman</option>
-            <option value="Pakistan">Pakistan</option>
-            <option value="Palau">Palau</option>
-            <option value="Palestine">Palestine</option>
-            <option value="Panama">Panama</option>
-            <option value="Papua New Guinea">Papua New Guinea</option>
-            <option value="Paraguay">Paraguay</option>
-            <option value="Peru">Peru</option>
-            <option value="Philippines">Philippines</option>
-            <option value="Poland">Poland</option>
-            <option value="Portugal">Portugal</option>
-            <option value="Qatar">Qatar</option>
-            <option value="Romania">Romania</option>
-            <option value="Russia">Russia</option>
-            <option value="Rwanda">Rwanda</option>
-            <option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option>
-            <option value="Saint Lucia">Saint Lucia</option>
-            <option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option>
-            <option value="Samoa">Samoa</option>
-            <option value="San Marino">San Marino</option>
-            <option value="Sao Tome and Principe">Sao Tome and Principe</option>
-            <option value="Saudi Arabia">Saudi Arabia</option>
-            <option value="Senegal">Senegal</option>
-            <option value="Serbia">Serbia</option>
-            <option value="Seychelles">Seychelles</option>
-            <option value="Sierra Leone">Sierra Leone</option>
-            <option value="Singapore">Singapore</option>
-            <option value="Slovakia">Slovakia</option>
-            <option value="Slovenia">Slovenia</option>
-            <option value="Solomon Islands">Solomon Islands</option>
-            <option value="Somalia">Somalia</option>
-            <option value="South Africa">South Africa</option>
-            <option value="South Korea">South Korea</option>
-            <option value="South Sudan">South Sudan</option>
-            <option value="Spain">Spain</option>
-            <option value="Sri Lanka">Sri Lanka</option>
-            <option value="Sudan">Sudan</option>
-            <option value="Suriname">Suriname</option>
-            <option value="Sweden">Sweden</option>
-            <option value="Switzerland">Switzerland</option>
-            <option value="Syria">Syria</option>
-            <option value="Taiwan">Taiwan</option>
-            <option value="Tajikistan">Tajikistan</option>
-            <option value="Tanzania">Tanzania</option>
-            <option value="Thailand">Thailand</option>
-            <option value="Timor-Leste">Timor-Leste</option>
-            <option value="Togo">Togo</option>
-            <option value="Tonga">Tonga</option>
-            <option value="Trinidad and Tobago">Trinidad and Tobago</option>
-            <option value="Tunisia">Tunisia</option>
-            <option value="Turkey">Turkey</option>
-            <option value="Turkmenistan">Turkmenistan</option>
-            <option value="Tuvalu">Tuvalu</option>
-            <option value="Uganda">Uganda</option>
-            <option value="Ukraine">Ukraine</option>
-            <option value="United Arab Emirates">United Arab Emirates</option>
-            <option value="United Kingdom">United Kingdom</option>
-            <option value="United States of America">United States of America</option>
-            <option value="Uruguay">Uruguay</option>
-            <option value="Uzbekistan">Uzbekistan</option>
-            <option value="Vanuatu">Vanuatu</option>
-            <option value="Vatican City">Vatican City</option>
-            <option value="Venezuela">Venezuela</option>
-            <option value="Vietnam">Vietnam</option>
-            <option value="Yemen">Yemen</option>
-            <option value="Zambia">Zambia</option>
-            <option value="Zimbabwe">Zimbabwe</option>
-  </select>
+    <!-- فلتر الدولة -->
+    <select id="countryFilter" class="search-input">
+      <option value="">🌍 All Countries</option>
+    </select>
 
-  <!-- البحث -->
-  <input type="text" id="searchInput" class="search-input"
-         placeholder="Search by title, make, model, region or country...">
+    <!-- البحث -->
+    <input type="text" id="searchInput" class="search-input"
+           placeholder="Search by title, make, model, region or country...">
 
-</div>
+  </div>
 
   <div id="listings-section" class="card hidden">
     <h2>All Listings</h2>
     <div id="listings-list">
       <p>Loading listings...</p>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="modalOverlay">
+    <div class="modal-box">
+      <div class="modal-icon" id="modalIcon">✅</div>
+      <div class="modal-message" id="modalMessage"></div>
+      <div class="modal-actions" id="modalActions"></div>
     </div>
   </div>
 
@@ -577,7 +753,55 @@ let allListings = [];
       const el = document.getElementById(elementId);
       if (!el) return;
       el.textContent = message;
-      el.style.color = isError ? '#f44336' : '#2e7d32';
+      el.style.color = isError ? '#FF5D7A' : '#25E0A6';
+    }
+
+    // ================= CUSTOM MODAL (visual replacement for native alert/confirm) =================
+    // نفس سلوك alert()/confirm() تماماً (تحجب حتى يضغط المستخدم زر)، لكن بشكل بصري متوافق مع تصميم التطبيق
+    // ولا تُحجب داخل بعض متصفحات Pi كما قد يحدث مع alert الأصلي في بعض الحالات
+    function customAlert(message, isError) {
+      return new Promise((resolve) => {
+        const overlay = document.getElementById('modalOverlay');
+        document.getElementById('modalIcon').textContent = isError ? '⚠️' : '✅';
+        document.getElementById('modalMessage').textContent = message;
+        const actions = document.getElementById('modalActions');
+        actions.innerHTML = '';
+        const okBtn = document.createElement('button');
+        okBtn.className = 'btn-primary';
+        okBtn.textContent = 'OK';
+        okBtn.onclick = () => {
+          overlay.classList.add('hidden');
+          resolve();
+        };
+        actions.appendChild(okBtn);
+        overlay.classList.remove('hidden');
+        okBtn.focus();
+      });
+    }
+
+    function customConfirm(message) {
+      return new Promise((resolve) => {
+        const overlay = document.getElementById('modalOverlay');
+        document.getElementById('modalIcon').textContent = '❓';
+        document.getElementById('modalMessage').textContent = message;
+        const actions = document.getElementById('modalActions');
+        actions.innerHTML = '';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn-secondary';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.onclick = () => { overlay.classList.add('hidden'); resolve(false); };
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn-delete';
+        confirmBtn.style.marginTop = '0';
+        confirmBtn.textContent = 'Delete';
+        confirmBtn.onclick = () => { overlay.classList.add('hidden'); resolve(true); };
+
+        actions.appendChild(cancelBtn);
+        actions.appendChild(confirmBtn);
+        overlay.classList.remove('hidden');
+        confirmBtn.focus();
+      });
     }
 
     // === CLOUDINARY: رفع الصور عبر سيرفرنا بدل الاتصال المباشر بـ Cloudinary ===
@@ -587,11 +811,17 @@ let allListings = [];
     async function uploadImagesToCloudinary(files) {
       if (!files || files.length === 0) return [];
 
+      const progressWrap = document.getElementById('uploadProgressWrap');
+      const progressBar = document.getElementById('uploadProgressBar');
+      progressWrap.classList.remove('hidden');
+      progressBar.style.width = '0%';
+
       const uploadedUrls = [];
       let index = 0;
       for (const file of files) {
         index++;
         showMessage('listingMsg', `Uploading image ${index} of ${files.length}...`, false);
+        progressBar.style.width = Math.round(((index - 1) / files.length) * 100) + '%';
 
         const formData = new FormData();
         formData.append('image', file);
@@ -606,17 +836,21 @@ let allListings = [];
             body: formData
           });
         } catch (networkErr) {
+          progressWrap.classList.add('hidden');
           throw new Error(`Network error while uploading image ${index}. Please check your connection and try again.`);
         }
 
         const uploadData = await uploadRes.json().catch(() => ({}));
         if (!uploadRes.ok || !uploadData.url) {
+          progressWrap.classList.add('hidden');
           throw new Error(`Failed to upload image ${index}: ${uploadData.error || 'Unknown error'}`);
         }
 
         uploadedUrls.push(uploadData.url);
+        progressBar.style.width = Math.round((index / files.length) * 100) + '%';
       }
 
+      progressWrap.classList.add('hidden');
       return uploadedUrls;
     }
 
@@ -654,7 +888,7 @@ async function checkPromoStatus() {
 document.getElementById('claim-promo-btn').onclick = async () => {
   const btn = document.getElementById('claim-promo-btn');
   btn.disabled = true;
-  btn.innerText = "Processing...";
+  btn.classList.add('btn-loading');
 
   try {
     const res = await fetch(`${BACKEND_URL}/api/claim-promo`, {
@@ -668,24 +902,24 @@ document.getElementById('claim-promo-btn').onclick = async () => {
     const data = await res.json();
 
     if (!data.success) {
-      alert("Error: " + (data.error || "Claim failed"));
       btn.disabled = false;
-      btn.innerText = "🎁 Claim 0.1 Pi (First 5 Users Only)";
+      btn.classList.remove('btn-loading');
+      await customAlert("Error: " + (data.error || "Claim failed"), true);
       return;
     }
 
-    alert(`🎉 Success! 0.1 Pi sent to your wallet.\nTXID: ${data.txid}`);
+    await customAlert(`🎉 Success! 0.1 Pi sent to your wallet.\nTXID: ${data.txid}`, false);
     checkPromoStatus();
 
   } catch (e) {
-    alert("Network error. Please try again.");
     btn.disabled = false;
-    btn.innerText = "🎁 Claim 0.1 Pi (First 5 Users Only)";
+    btn.classList.remove('btn-loading');
+    await customAlert("Network error. Please try again.", true);
   }
 };
 
     function onIncompletePaymentFound(payment) {
-      alert("Pending payment detected. Completing it automatically...");
+      customAlert("Pending payment detected. Completing it automatically...", false);
       fetch(`${BACKEND_URL}/api/complete-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -699,9 +933,12 @@ document.getElementById('claim-promo-btn').onclick = async () => {
 
     document.getElementById('login-btn').onclick = async () => {
      if (!document.getElementById('acceptPolicies').checked) {
-    alert("You must accept the Terms of Service and Privacy Policy to continue.");
+    await customAlert("You must accept the Terms of Service and Privacy Policy to continue.", true);
     return;
   }
+      const loginBtn = document.getElementById('login-btn');
+      loginBtn.disabled = true;
+      loginBtn.classList.add('btn-loading');
       try {
         const scopes = ['username', 'payments', 'wallet_address'];
         const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
@@ -719,8 +956,11 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         loadListings();
         checkPromoStatus(); 
       } catch (err) {
-        alert("Login error: " + err.message);
+        await customAlert("Login error: " + err.message, true);
         console.error(err);
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.classList.remove('btn-loading');
       }
     };
 
@@ -731,14 +971,14 @@ document.getElementById('claim-promo-btn').onclick = async () => {
       preview.innerHTML = '';
       const files = e.target.files;
       if (files.length > 6) {
-        alert("Maximum 6 images allowed");
+        customAlert("Maximum 6 images allowed", true);
         e.target.value = '';
         return;
       }
       const MAX_IMAGE_BYTES = 1024 * 1024; // 1MB لكل صورة، يطابق حد السيرفر
       for (let file of files) {
         if (file.size > MAX_IMAGE_BYTES) {
-          alert(`Image "${file.name}" is too large. Max size is 1MB per image.`);
+          customAlert(`Image "${file.name}" is too large. Max size is 1MB per image.`, true);
           e.target.value = '';
           preview.innerHTML = '';
           return;
@@ -750,7 +990,10 @@ document.getElementById('claim-promo-btn').onclick = async () => {
     };
 
     document.getElementById('add-listing-btn').onclick = async () => {
-      if (!currentUser || !piToken) return alert("Please login first");
+      if (!currentUser || !piToken) { await customAlert("Please login first", true); return; }
+      const addBtn = document.getElementById('add-listing-btn');
+      addBtn.disabled = true;
+      addBtn.classList.add('btn-loading');
       showMessage('paymentMsg', 'Setting up payment...', false);
 
       const payRes = await fetch(`${BACKEND_URL}/api/create-listing-payment`, {
@@ -764,7 +1007,9 @@ document.getElementById('claim-promo-btn').onclick = async () => {
       const payData = await payRes.json();
       if (!payData.success) {
         showMessage('paymentMsg', 'Payment setup failed: ' + (payData.error || payRes.status), true);
-        return alert("Payment setup failed");
+        addBtn.disabled = false;
+        addBtn.classList.remove('btn-loading');
+        return await customAlert("Payment setup failed", true);
       }
 
       const payment = {
@@ -789,14 +1034,18 @@ document.getElementById('claim-promo-btn').onclick = async () => {
               const err = await r.json().catch(() => ({}));
               console.error('Approve payment failed:', r.status, err);
               showMessage('paymentMsg', 'Payment approval failed: ' + (err.error || ('HTTP ' + r.status)), true);
-              alert("Payment approval failed: " + (err.error || ('HTTP ' + r.status)));
+              addBtn.disabled = false;
+              addBtn.classList.remove('btn-loading');
+              await customAlert("Payment approval failed: " + (err.error || ('HTTP ' + r.status)), true);
             } else {
               showMessage('paymentMsg', 'Payment approved, waiting for confirmation...', false);
             }
           } catch (e) {
             console.error('Approve payment network error:', e);
             showMessage('paymentMsg', 'Network error while approving payment: ' + e.message, true);
-            alert("Network error while approving payment: " + e.message);
+            addBtn.disabled = false;
+            addBtn.classList.remove('btn-loading');
+            await customAlert("Network error while approving payment: " + e.message, true);
           }
         },
         onReadyForServerCompletion: async (paymentId, txid) => {
@@ -810,21 +1059,35 @@ document.getElementById('claim-promo-btn').onclick = async () => {
               const err = await r.json().catch(() => ({}));
               console.error('Complete payment failed:', r.status, err);
               showMessage('paymentMsg', 'Payment completion failed: ' + (err.error || ('HTTP ' + r.status)), true);
-              alert("Payment completion failed: " + (err.error || ('HTTP ' + r.status)));
+              addBtn.disabled = false;
+              addBtn.classList.remove('btn-loading');
+              await customAlert("Payment completion failed: " + (err.error || ('HTTP ' + r.status)), true);
               return;
             }
             showMessage('paymentMsg', 'Payment successful! Now fill in your listing details.', false);
-            alert("Payment successful! Now fill in your listing details.");
+            await customAlert("Payment successful! Now fill in your listing details.", false);
             document.getElementById('add-listing-btn').classList.add('hidden');
+            addBtn.disabled = false;
+            addBtn.classList.remove('btn-loading');
             document.getElementById('listing-form').classList.remove('hidden');
           } catch (e) {
             console.error('Complete payment network error:', e);
             showMessage('paymentMsg', 'Network error while completing payment: ' + e.message, true);
-            alert("Network error while completing payment: " + e.message);
+            addBtn.disabled = false;
+            addBtn.classList.remove('btn-loading');
+            await customAlert("Network error while completing payment: " + e.message, true);
           }
         },
-        onCancel: () => showMessage('paymentMsg', 'Payment cancelled', true),
-        onError: (error) => showMessage('paymentMsg', 'Payment error: ' + error.message, true)
+        onCancel: () => {
+          showMessage('paymentMsg', 'Payment cancelled', true);
+          addBtn.disabled = false;
+          addBtn.classList.remove('btn-loading');
+        },
+        onError: (error) => {
+          showMessage('paymentMsg', 'Payment error: ' + error.message, true);
+          addBtn.disabled = false;
+          addBtn.classList.remove('btn-loading');
+        }
       };
 
       Pi.createPayment(payment, callbacks);
@@ -837,7 +1100,13 @@ document.getElementById('claim-promo-btn').onclick = async () => {
 }
 
       const submitBtn = document.getElementById('submit-listing-btn');
+      const imagesInput = document.getElementById('images');
+      // قفل زر النشر وحقل الصور فوراً لمنع الضغط المزدوج أو تغيير الصور أثناء الرفع/النشر
+      if (submitBtn.disabled) return;
       submitBtn.disabled = true;
+      imagesInput.disabled = true;
+      const originalBtnText = submitBtn.textContent;
+      submitBtn.textContent = 'Uploading images...';
 
       try {
         const title = document.getElementById('title').value.trim();
@@ -851,23 +1120,22 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         const country = document.getElementById('country').value;
         const region = document.getElementById('region').value.trim();
         const phoneNumber = document.getElementById('phoneNumber').value.trim();
-        const imageFiles = document.getElementById('images').files;
+        const imageFiles = imagesInput.files;
 
         if (!title || !description || isNaN(priceInPi) || !category || !country || !region || !phoneNumber) {
           showMessage('listingMsg', 'Please fill all required fields (*)', true);
-          submitBtn.disabled = false;
           return;
         }
 
         if (imageFiles.length > 6) {
           showMessage('listingMsg', 'Maximum 6 images allowed', true);
-          submitBtn.disabled = false;
           return;
         }
 
         // === CLOUDINARY: رفع الصور مباشرة بدل تحويلها إلى base64 ===
         const images = await uploadImagesToCloudinary(Array.from(imageFiles));
 
+        submitBtn.textContent = 'Publishing...';
         showMessage('listingMsg', 'Publishing your listing...', false);
 
         const res = await fetch(`${BACKEND_URL}/api/complete-listing`, {
@@ -899,16 +1167,18 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         }
 
         showMessage('listingMsg', 'Listing published successfully!', false);
-        alert("Listing published successfully!");
+        await customAlert("Listing published successfully!", false);
         document.getElementById('listing-form').classList.add('hidden');
         document.getElementById('add-listing-btn').classList.remove('hidden');
         loadListings();
       } catch (err) {
         console.error(err);
         showMessage('listingMsg', 'Publish error: ' + err.message, true);
-        alert("Publish error: " + err.message);
+        await customAlert("Publish error: " + err.message, true);
       } finally {
         submitBtn.disabled = false;
+        imagesInput.disabled = false;
+        submitBtn.textContent = originalBtnText;
       }
     };
 
@@ -932,7 +1202,7 @@ populateCountryFilter();
 applyFilters();
 
       } catch (err) {
-        listDiv.innerHTML = `<p style="color:red;">Error loading listings: ${escapeHtml(err.message)}</p>`;
+        listDiv.innerHTML = `<p style="color:#FF5D7A;">Error loading listings: ${escapeHtml(err.message)}</p>`;
         console.error("Load listings error:", err);
       }
     }
@@ -960,12 +1230,14 @@ function applyFilters() {
   displayListings(filtered);
 }
 
+    const CATEGORY_ICONS = { car: '🚗', truck: '🚚', motorcycle: '🏍️' };
+
     function displayListings(listings) {
       const listDiv = document.getElementById('listings-list');
       listDiv.innerHTML = '';
 
       if (listings.length === 0) {
-        listDiv.innerHTML = '<p>No listings available yet. Be the first to publish one!</p>';
+        listDiv.innerHTML = '<div class="empty-state">No listings available yet. Be the first to publish one!</div>';
         return;
       }
 
@@ -973,11 +1245,12 @@ function applyFilters() {
         const item = document.createElement('div');
         item.classList.add('listing-item');
 
+        const categoryIcon = CATEGORY_ICONS[listing.category] || '🚙';
+
         // كل القيم القادمة من قاعدة البيانات (وقد تكون من مستخدمين آخرين) تُنقّى دائماً قبل العرض
         item.innerHTML = `
-          <h3>${escapeHtml(listing.title || 'No title')}</h3>
-          <p><strong>Price:</strong> ${escapeHtml(listing.priceInPi)} Pi</p>
-          <p><strong>Category:</strong> ${escapeHtml(listing.category || 'N/A')}</p>
+          <h3>${escapeHtml(listing.title || 'No title')}<span class="category-chip">${escapeHtml(categoryIcon)} ${escapeHtml(listing.category || 'N/A')}</span></h3>
+          <div class="price-chip">◎ ${escapeHtml(listing.priceInPi)} Pi</div>
           <p><strong>Make:</strong> ${escapeHtml(listing.make || 'N/A')}</p>
           <p><strong>Model:</strong> ${escapeHtml(listing.model || 'N/A')}</p>
           <p><strong>Year:</strong> ${escapeHtml(listing.year || 'N/A')}</p>
@@ -1009,7 +1282,10 @@ function applyFilters() {
           deleteBtn.classList.add('btn-delete');
           deleteBtn.textContent = 'Delete Listing';
           deleteBtn.onclick = async () => {
-            if (confirm("Are you sure you want to delete this listing?")) {
+            const confirmed = await customConfirm("Are you sure you want to delete this listing?");
+            if (confirmed) {
+              deleteBtn.disabled = true;
+              deleteBtn.classList.add('btn-loading');
               const delRes = await fetch(`${BACKEND_URL}/api/delete-listing`, {
                 method: 'POST',
                headers: {
@@ -1019,10 +1295,12 @@ function applyFilters() {
                 body: JSON.stringify({ listingId: listing._id })
               });
               if (delRes.ok) {
-                alert("Listing deleted!");
+                await customAlert("Listing deleted!", false);
                 loadListings();
               } else {
-                alert("Failed to delete listing");
+                deleteBtn.disabled = false;
+                deleteBtn.classList.remove('btn-loading');
+                await customAlert("Failed to delete listing", true);
               }
             }
           };
@@ -1054,7 +1332,7 @@ function populateCountryFilter() {
     }
   }
 }
-document.getElementById('logout-btn').onclick = () => {
+document.getElementById('logout-btn').onclick = async () => {
   // حذف بيانات الجلسة
   currentUser = null;
   piToken = null;
@@ -1073,7 +1351,7 @@ document.getElementById('logout-btn').onclick = () => {
   // مسح الرسالة
   document.getElementById('status').innerHTML = '';
 
-  alert("You have been logged out.");
+  await customAlert("You have been logged out.", false);
 };
 
   </script>
