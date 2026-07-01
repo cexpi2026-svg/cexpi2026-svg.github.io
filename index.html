@@ -65,6 +65,29 @@
       -webkit-text-fill-color:transparent;
     }
 
+    .app-logo-wrap{ display:flex; justify-content:center; margin:2px 0 10px; }
+    .app-logo{
+      width:76px; height:76px;
+      border-radius:22px;
+      display:flex; align-items:center; justify-content:center;
+      background:linear-gradient(135deg, var(--violet) 0%, var(--violet-2) 55%, var(--mint) 130%);
+      box-shadow:0 10px 30px -8px var(--violet-glow), inset 0 1px 0 rgba(255,255,255,0.35);
+      position:relative;
+      overflow:hidden;
+    }
+    .app-logo::after{
+      content:"";
+      position:absolute; inset:0;
+      background:radial-gradient(circle at 30% 20%, rgba(255,255,255,0.35), transparent 55%);
+    }
+    .app-logo svg{ width:44px; height:44px; position:relative; z-index:1; }
+
+    .brand-title{
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      flex-wrap:wrap;
+    }
+    .brand-title .brand-icon{ font-size:26px; line-height:1; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.35)); }
+
     .tagline{ text-align:center; color:var(--text-1); margin:0 0 4px; font-size:14.5px; }
 
     .fee-pill-row{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin:14px 0 6px; }
@@ -347,6 +370,30 @@
       display:inline; margin:0; font-weight:400; color:var(--text-1); font-size:13.5px;
     }
 
+    /* ===== Login page polish ===== */
+    .login-intro{
+      text-align:center; color:var(--text-1); font-size:13.5px;
+      line-height:1.65; margin:0 0 18px; padding:0 4px;
+    }
+    .login-features{ display:flex; flex-direction:column; gap:8px; margin:0 0 20px; }
+    .login-feature{
+      display:flex; align-items:center; gap:10px;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius-sm); padding:11px 14px;
+      font-size:13px; color:var(--text-1);
+    }
+    .login-feature .feature-icon{
+      font-size:17px; line-height:1; flex-shrink:0;
+      width:30px; height:30px; border-radius:9px;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(139,107,255,0.15); border:1px solid var(--border-strong);
+    }
+    #login-section .checkbox-row{
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius-md); padding:13px 15px; margin-top:4px;
+    }
+    #login-section .btn-primary{ margin-top:16px; }
+
     .empty-state{
       text-align:center; color:var(--text-1); padding:40px 20px;
       background:var(--surface); border:1px dashed var(--border);
@@ -390,7 +437,23 @@
 </head>
 <body>
   <div class="card">
-    <h1>🚗🚚CexPi🚴‍♂️</h1>
+    <div class="app-logo-wrap">
+      <div class="app-logo" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 40c0-2.2 1.8-4 4-4h32c2.2 0 4 1.8 4 4v6a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-6Z" fill="#fff"/>
+          <path d="M12 36l4-9a3 3 0 0 1 2.8-1.9h14.4A3 3 0 0 1 36 27l4 9H12Z" fill="#fff" fill-opacity="0.85"/>
+          <circle cx="18" cy="48" r="4.5" fill="#171730"/>
+          <circle cx="18" cy="48" r="2" fill="#fff"/>
+          <circle cx="38" cy="48" r="4.5" fill="#171730"/>
+          <circle cx="38" cy="48" r="2" fill="#fff"/>
+        </svg>
+      </div>
+    </div>
+    <h1>
+      <span class="brand-title">
+        <span class="brand-icon">🚗</span><span class="brand-icon">🚚</span>CexPi<span class="brand-icon">🏍️</span>
+      </span>
+    </h1>
     <p class="tagline">Used Cars, Trucks &amp; Motorcycles Ads Platform</p>
     <div class="fee-pill-row">
       <span class="fee-pill accent"><span class="dot"></span>Free access</span>
@@ -398,6 +461,14 @@
     </div>
 
     <div id="login-section">
+
+      <p class="login-intro">Welcome! Login with your Pi Network account to browse listings, contact sellers, and publish your own vehicle ads.</p>
+
+      <div class="login-features">
+        <div class="login-feature"><span class="feature-icon">🚗</span>Browse cars, trucks &amp; motorcycles from sellers everywhere</div>
+        <div class="login-feature"><span class="feature-icon">📞</span>Contact sellers directly, no middleman</div>
+        <div class="login-feature"><span class="feature-icon">🔐</span>Secure login &amp; payments powered by Pi Network</div>
+      </div>
 
       <div class="checkbox-row">
         <input type="checkbox" id="acceptPolicies">
@@ -691,7 +762,7 @@
     </div>
   </div>
 
-  <div class="search-container">
+  <div class="search-container hidden" id="search-container">
 
     <!-- فلتر الدولة -->
     <select id="countryFilter" class="search-input">
@@ -996,6 +1067,7 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         document.getElementById('login-section').classList.add('hidden');
         document.getElementById('app-section').classList.remove('hidden');
         document.getElementById('listings-section').classList.remove('hidden');
+        document.getElementById('search-container').classList.remove('hidden');
         document.getElementById('status').innerHTML = `Welcome ${escapeHtml(currentUser.username)}!`;
 
         loadListings();
@@ -1440,6 +1512,7 @@ document.getElementById('logout-btn').onclick = async () => {
   // إخفاء التطبيق
   document.getElementById('app-section').classList.add('hidden');
   document.getElementById('listings-section').classList.add('hidden');
+  document.getElementById('search-container').classList.add('hidden');
 
   // إظهار صفحة تسجيل الدخول
   document.getElementById('login-section').classList.remove('hidden');
