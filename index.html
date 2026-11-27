@@ -1259,7 +1259,7 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         const scopes = ['username', 'payments', 'wallet_address'];
                 const auth = await withTimeout(
           Pi.authenticate(scopes, onIncompletePaymentFound),
-          30000,
+          60000,
           'LOGIN_TIMEOUT'
         );
         piToken = auth.accessToken;
