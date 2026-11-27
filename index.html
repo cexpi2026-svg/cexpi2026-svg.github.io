@@ -1716,6 +1716,7 @@ function applyFilters() {
               if (delRes.ok) {
                 await customAlert("Listing deleted!", false);
                 loadListings();
+                checkCredits();
               } else {
                 deleteBtn.disabled = false;
                 deleteBtn.classList.remove('btn-loading');
