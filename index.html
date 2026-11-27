@@ -1267,9 +1267,14 @@ document.getElementById('claim-promo-btn').onclick = async () => {
 
         loadListings();
         checkPromoStatus(); 
-      } catch (err) {
-        await customAlert("Login error: " + err.message, true);
+            } catch (err) {
         console.error(err);
+        await customAlert("Login error: " + err.message, true);
+        // بعد ضغط OK تُعاد الصفحة تلقائياً عند أخطاء المهلة أو الـ SDK
+        if (/timed out|not (initialized|ready)|failed to load|sdk/i.test(err.message || '')) {
+          location.reload();
+          return;
+        }
       } finally {
         loginBtn.disabled = false;
         loginBtn.classList.remove('btn-loading');
