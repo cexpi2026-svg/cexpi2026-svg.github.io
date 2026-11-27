@@ -932,7 +932,12 @@ async function ensurePiReady(timeoutMs = 15000) {
     await new Promise(r => setTimeout(r, 250));
   }
 }
-
+function withTimeout(promise, ms, msg) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(msg)), ms))
+  ]);
+}
 let currentUser = null;
 let allListings = [];
 let currentUploadedImages = []; // روابط Cloudinary الجاهزة بعد رفع الصور المختارة حالياً
@@ -1252,7 +1257,11 @@ document.getElementById('claim-promo-btn').onclick = async () => {
       try {
        await ensurePiReady();
         const scopes = ['username', 'payments', 'wallet_address'];
-        const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+                const auth = await withTimeout(
+          Pi.authenticate(scopes, onIncompletePaymentFound),
+          7000,
+          'LOGIN_TIMEOUT'
+        );
         piToken = auth.accessToken;
         currentUser = auth.user;
 
@@ -1267,14 +1276,14 @@ document.getElementById('claim-promo-btn').onclick = async () => {
 
         loadListings();
         checkPromoStatus(); 
-            } catch (err) {
+                } catch (err) {
         console.error(err);
-        await customAlert("Login error: " + err.message, true);
-        // بعد ضغط OK تُعاد الصفحة تلقائياً عند أخطاء المهلة أو الـ SDK
-        if (/timed out|not (initialized|ready)|failed to load|sdk/i.test(err.message || '')) {
+        if (/LOGIN_TIMEOUT|timed out|not (initialized|ready)|failed to load|sdk/i.test(err.message || '')) {
+          await customAlert("Please log in again.", true);
           location.reload();
           return;
         }
+        await customAlert("Login error: " + err.message, true);
       } finally {
         loginBtn.disabled = false;
         loginBtn.classList.remove('btn-loading');
