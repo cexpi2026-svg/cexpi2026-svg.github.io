@@ -1233,19 +1233,39 @@ document.getElementById('claim-promo-btn').onclick = async () => {
   }
 };
 
-    function onIncompletePaymentFound(payment) {
-      customAlert("Pending payment detected. Completing it automatically...", false);
-      fetch(`${BACKEND_URL}/api/complete-payment`, {
+        function onIncompletePaymentFound(payment) {
+      const txid = payment.transaction ? payment.transaction.txid : null;
+      if (!txid) return Promise.resolve(); // لا يمكن إكمالها بدون txid
+      return fetch(`${BACKEND_URL}/api/complete-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          paymentId: payment.identifier,
-          txid: payment.transaction ? payment.transaction.txid : null
-        })
-      });
-      return Promise.resolve();
+        body: JSON.stringify({ paymentId: payment.identifier, txid })
+      }).then(() => { setTimeout(checkCredits, 1500); }).catch(() => {});
     }
-
+// يسأل السيرفر هل عند المستخدم إعلان مدفوع لم يُنشر، ويعرض الواجهة المناسبة
+async function checkCredits() {
+  if (!piToken) return;
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/my-credits`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${piToken}` },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    const addBtn = document.getElementById('add-listing-btn');
+    const form = document.getElementById('listing-form');
+    if (data.credits > 0) {
+      addBtn.classList.add('hidden');
+      form.classList.remove('hidden');
+      showMessage('paymentMsg', '✅ لديك إعلان مدفوع، يمكنك نشره الآن بدون دفع جديد.', false);
+    } else {
+      addBtn.classList.remove('hidden');
+      form.classList.add('hidden');
+    }
+  } catch (e) {
+    console.error('checkCredits error:', e);
+  }
+}
     document.getElementById('login-btn').onclick = async () => {
      if (!document.getElementById('acceptPolicies').checked) {
     await customAlert("You must accept the Terms of Service and Privacy Policy to continue.", true);
@@ -1275,7 +1295,8 @@ document.getElementById('claim-promo-btn').onclick = async () => {
         document.getElementById('status').innerHTML = `Welcome ${escapeHtml(currentUser.username)}!`;
 
         loadListings();
-        checkPromoStatus(); 
+checkPromoStatus();
+checkCredits();
                 } catch (err) {
         console.error(err);
         if (/LOGIN_TIMEOUT|timed out|not (initialized|ready)|failed to load|sdk/i.test(err.message || '')) {
@@ -1543,19 +1564,20 @@ document.getElementById('claim-promo-btn').onclick = async () => {
           throw new Error(err.error || ('Failed to publish listing (HTTP ' + res.status + ')'));
         }
 
-        showMessage('listingMsg', 'Listing published successfully!', false);
+                showMessage('listingMsg', 'Listing published successfully!', false);
         await customAlert("Listing published successfully!", false);
-        document.getElementById('listing-form').classList.add('hidden');
-        document.getElementById('add-listing-btn').classList.remove('hidden');
         // إعادة تصفير حالة الصور حتى لا تُستخدم روابط هذا الإعلان بالخطأ في إعلان قادم
         currentUploadedImages = [];
         document.getElementById('preview').innerHTML = '';
+        document.getElementById('listingForm').reset();
         setImageUploadStatus('', 'info');
         loadListings();
+        checkCredits();
       } catch (err) {
         console.error(err);
         showMessage('listingMsg', 'Publish error: ' + err.message, true);
         await customAlert("Publish error: " + err.message, true);
+        checkCredits();
       } finally {
         submitBtn.disabled = false;
         imagesInput.disabled = false;
