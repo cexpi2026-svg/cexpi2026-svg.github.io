@@ -895,7 +895,43 @@
 let piToken = null;
 let walletAddress = null;
 
-Pi.init({ version: "2.0", sandbox: false });
+// ================= PI SDK SAFE INIT =================
+// ننتظر تحميل الـ SDK فعلياً ثم نهيّئه، مع إعادة محاولة تلقائية
+let piReady = false;
+
+function initPiSDK() {
+  if (piReady) return true;
+  if (typeof window.Pi === 'undefined') return false;
+  try {
+    window.Pi.init({ version: "2.0", sandbox: false });
+    piReady = true;
+    return true;
+  } catch (e) {
+    console.error('Pi.init error:', e);
+    return false;
+  }
+}
+
+// محاولة فورية + إعادة المحاولة كل 300ms (حتى 20 ثانية)
+(function waitForPi() {
+  let tries = 0;
+  const timer = setInterval(() => {
+    tries++;
+    if (initPiSDK() || tries > 66) clearInterval(timer);
+  }, 300);
+  initPiSDK();
+})();
+
+// دالة تنتظر جاهزية الـ SDK (تستعملها دالة تسجيل الدخول)
+async function ensurePiReady(timeoutMs = 15000) {
+  const start = Date.now();
+  while (!initPiSDK()) {
+    if (Date.now() - start > timeoutMs) {
+      throw new Error('Pi SDK failed to load. Please check your connection and try again.');
+    }
+    await new Promise(r => setTimeout(r, 250));
+  }
+}
 
 let currentUser = null;
 let allListings = [];
@@ -1214,6 +1250,7 @@ document.getElementById('claim-promo-btn').onclick = async () => {
       loginBtn.disabled = true;
       loginBtn.classList.add('btn-loading');
       try {
+       await ensurePiReady();
         const scopes = ['username', 'payments', 'wallet_address'];
         const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
         piToken = auth.accessToken;
